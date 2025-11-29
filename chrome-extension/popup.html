@@ -84,14 +84,33 @@
 </head>
 <body>
   <div id="app">
-    <div id="loginPrompt" style="display: none;" class="login-prompt">
-      <p>Please sign in to GoodJob to save jobs.</p>
-      <a href="#" id="openApp" target="_blank">Open GoodJob</a>
+    <!-- Login Form -->
+    <div id="loginForm" style="display: none;">
+      <h1>Sign in to GoodJob</h1>
+      <div id="message"></div>
+      <form id="authForm">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" required>
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" required>
+        </div>
+        <button type="submit" id="authBtn">Sign In</button>
+      </form>
+      <div style="text-align: center; margin-top: 12px; font-size: 13px; color: #6b7280;">
+        Don't have an account? <a href="https://good-job.app/auth/signup" target="_blank">Sign up</a>
+      </div>
     </div>
 
-    <div id="mainForm">
-      <h1>Add to GoodJob</h1>
-      <div id="message"></div>
+    <!-- Job Form -->
+    <div id="mainForm" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h1 style="margin: 0;">Add to GoodJob</h1>
+        <button id="logoutBtn" style="width: auto; padding: 6px 12px; background: #6b7280; font-size: 12px;">Logout</button>
+      </div>
+      <div id="jobMessage"></div>
       <form id="jobForm">
         <div class="form-group">
           <label for="title">Job Title *</label>

@@ -3,11 +3,9 @@
   "name": "GoodJob - Job Tracker",
   "version": "1.0.0",
   "description": "Quickly save job postings to your GoodJob CRM",
-  "permissions": ["activeTab", "storage", "cookies"],
+  "permissions": ["activeTab", "storage"],
   "host_permissions": [
-    "https://*.supabase.co/*",
-    "https://good-job.app/*",
-    "https://*.vercel.app/*"
+    "https://*.supabase.co/*"
   ],
   "action": {
     "default_popup": "popup.html",
