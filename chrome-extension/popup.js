@@ -46,13 +46,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
           const cookies = await chrome.cookies.getAll({ url: domain });
           allCookies = [...allCookies, ...cookies];
+          console.log(`Cookies from ${domain}:`, cookies.map(c => c.name));
 
+          // Look for Supabase auth token cookie
+          // Pattern: sb-{project-ref}-auth-token
           const cookie = cookies.find(c =>
-            c.name.includes('sb-') && c.name.includes('-auth-token')
+            c.name.startsWith('sb-') && c.name.endsWith('-auth-token')
           );
 
           if (cookie) {
             authCookie = cookie;
+            console.log(`Found auth cookie from ${domain}:`, cookie.name);
             break;
           }
         } catch (e) {
@@ -65,9 +69,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.log('Auth cookie found:', authCookie);
 
       if (!authCookie) {
-        showError('Please sign in to GoodJob first. Make sure you\'re signed in at good-job.app or the dev preview.');
+        showError('Please sign in to GoodJob first. Check the console (F12) for debugging info.');
         document.getElementById('loginPrompt').style.display = 'block';
         document.getElementById('mainForm').style.display = 'none';
+        console.error('No auth cookie found. Check the logs above to see which cookies were detected.');
         return;
       }
 
@@ -108,8 +113,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       showSuccess('Job saved successfully!');
       setTimeout(() => window.close(), 1500);
     } catch (error) {
-      console.error('Error:', error);
-      showError('Failed to save job. Make sure you\'re signed in at good-job.app');
+      console.error('Error saving job:', error);
+      showError(`Failed to save job: ${error.message}`);
     } finally {
       submitBtn.disabled = false;
       submitBtn.textContent = 'Add to GoodJob';
