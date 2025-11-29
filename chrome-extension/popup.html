@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GoodJob - Add Job</title>
+  <style>
+    body {
+      width: 400px;
+      padding: 16px;
+      font-family: system-ui, -apple-system, sans-serif;
+      margin: 0;
+    }
+    h1 {
+      font-size: 20px;
+      margin: 0 0 16px 0;
+      color: #1f2937;
+    }
+    .form-group {
+      margin-bottom: 12px;
+    }
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 4px;
+      color: #374151;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #1d4ed8;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .success {
+      padding: 12px;
+      background: #d1fae5;
+      color: #065f46;
+      border-radius: 6px;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+    .error {
+      padding: 12px;
+      background: #fee2e2;
+      color: #991b1b;
+      border-radius: 6px;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+    .login-prompt {
+      text-align: center;
+      padding: 20px;
+    }
+    .login-prompt a {
+      color: #2563eb;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="loginPrompt" style="display: none;" class="login-prompt">
+      <p>Please sign in to GoodJob to save jobs.</p>
+      <a href="#" id="openApp" target="_blank">Open GoodJob</a>
+    </div>
+
+    <div id="mainForm">
+      <h1>Add to GoodJob</h1>
+      <div id="message"></div>
+      <form id="jobForm">
+        <div class="form-group">
+          <label for="title">Job Title *</label>
+          <input type="text" id="title" required>
+        </div>
+        <div class="form-group">
+          <label for="company">Company *</label>
+          <input type="text" id="company" required>
+        </div>
+        <div class="form-group">
+          <label for="url">Job URL</label>
+          <input type="url" id="url" readonly>
+        </div>
+        <div class="form-group">
+          <label for="description">Description</label>
+          <textarea id="description"></textarea>
+        </div>
+        <button type="submit" id="submitBtn">Add to GoodJob</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
