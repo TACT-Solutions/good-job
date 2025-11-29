@@ -1,5 +1,8 @@
 # GoodJob Complete Setup Guide
 
+**Live App**: https://good-job.app
+**GitHub**: https://github.com/TACT-Solutions/good-job
+
 This guide will walk you through setting up GoodJob from scratch.
 
 ## Table of Contents

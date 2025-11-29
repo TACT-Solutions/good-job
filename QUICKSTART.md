@@ -1,5 +1,7 @@
 # GoodJob - Quick Start
 
+**Live App**: https://good-job.app
+
 ## You're Almost Ready! 🎉
 
 Your GoodJob application is fully built and ready to run. You just need to connect it to Supabase and add API keys.

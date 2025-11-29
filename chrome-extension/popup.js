@@ -81,6 +81,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   document.getElementById('openApp')?.addEventListener('click', () => {
-    chrome.tabs.create({ url: 'http://localhost:3000' });
+    chrome.tabs.create({ url: 'https://good-job.app' });
   });
 });

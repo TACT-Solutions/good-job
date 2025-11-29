@@ -1,5 +1,7 @@
 # GoodJob - AI-Powered Job Search CRM
 
+**Live App**: https://good-job.app
+
 **GoodJob** is a lightweight, cost-effective job search CRM built for job seekers. Track applications, manage contacts, get AI insights, and stay organized—all for under $5/month.
 
 ## Features
@@ -149,11 +151,21 @@ npm run lint       # Run ESLint
 
 ## Deployment
 
-### Deploy to Vercel
+**Production URL**: https://good-job.app
+
+We use a branch-based deployment strategy:
+- **`main` branch** → Production (https://good-job.app)
+- **`dev` branch** → Development preview (https://good-job-dev.vercel.app)
+- **Feature branches** → Automatic preview URLs
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for complete deployment workflow and branch strategy.
+
+### Quick Deploy to Vercel
 1. Push your code to GitHub
 2. Import project on [vercel.com](https://vercel.com)
 3. Add environment variables in Vercel dashboard
-4. Deploy!
+4. Configure custom domain: `good-job.app`
+5. Deploy!
 
 ### Environment Variables on Vercel
 Make sure to add all variables from `.env.local` to your Vercel project settings.
