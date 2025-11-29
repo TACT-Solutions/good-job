@@ -31,18 +31,41 @@ document.addEventListener('DOMContentLoaded', async () => {
     submitBtn.textContent = 'Adding...';
 
     try {
-      // Get all cookies from the main app domain
-      const cookies = await chrome.cookies.getAll({
-        url: 'https://good-job.app'
-      });
+      // Try to get cookies from multiple possible domains
+      const domains = [
+        'https://good-job.app',
+        'https://goodjob-git-dev-jacob-mcdaniels-projects.vercel.app',
+        SUPABASE_URL
+      ];
 
-      // Find the Supabase auth token cookie
-      const authCookie = cookies.find(cookie =>
-        cookie.name.includes('sb-') && cookie.name.includes('-auth-token')
-      );
+      let authCookie = null;
+      let allCookies = [];
+
+      // Try each domain
+      for (const domain of domains) {
+        try {
+          const cookies = await chrome.cookies.getAll({ url: domain });
+          allCookies = [...allCookies, ...cookies];
+
+          const cookie = cookies.find(c =>
+            c.name.includes('sb-') && c.name.includes('-auth-token')
+          );
+
+          if (cookie) {
+            authCookie = cookie;
+            break;
+          }
+        } catch (e) {
+          console.log(`Failed to get cookies from ${domain}:`, e);
+        }
+      }
+
+      // Debug: log all cookies
+      console.log('All cookies found:', allCookies.map(c => c.name));
+      console.log('Auth cookie found:', authCookie);
 
       if (!authCookie) {
-        showError('Please sign in to GoodJob first');
+        showError('Please sign in to GoodJob first. Make sure you\'re signed in at good-job.app or the dev preview.');
         document.getElementById('loginPrompt').style.display = 'block';
         document.getElementById('mainForm').style.display = 'none';
         return;
@@ -53,7 +76,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       try {
         const cookieData = JSON.parse(decodeURIComponent(authCookie.value));
         session = cookieData;
+        console.log('Session parsed successfully');
       } catch (e) {
+        console.error('Failed to parse session:', e);
         throw new Error('Invalid session data');
       }
 

@@ -4,7 +4,11 @@
   "version": "1.0.0",
   "description": "Quickly save job postings to your GoodJob CRM",
   "permissions": ["activeTab", "storage", "cookies"],
-  "host_permissions": ["https://*.supabase.co/*", "https://good-job.app/*"],
+  "host_permissions": [
+    "https://*.supabase.co/*",
+    "https://good-job.app/*",
+    "https://*.vercel.app/*"
+  ],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
