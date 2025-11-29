@@ -1,5 +1,5 @@
-const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+const SUPABASE_URL = 'https://qtylybvgoyaawvoexaxt.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0eWx5YnZnb3lhYXd2b2V4YXh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzODU5NTIsImV4cCI6MjA3OTk2MTk1Mn0.HrrYAIMGl5Zf763hyBBi6ZS4yY-T78bxnoqyjV5t2TUEY';
 
 document.addEventListener('DOMContentLoaded', async () => {
   const urlInput = document.getElementById('url');
@@ -31,14 +31,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     submitBtn.textContent = 'Adding...';
 
     try {
-      const result = await chrome.storage.local.get(['supabase_session']);
-      const session = result.supabase_session;
+      // Get all cookies from the main app domain
+      const cookies = await chrome.cookies.getAll({
+        url: 'https://good-job.app'
+      });
 
-      if (!session) {
+      // Find the Supabase auth token cookie
+      const authCookie = cookies.find(cookie =>
+        cookie.name.includes('sb-') && cookie.name.includes('-auth-token')
+      );
+
+      if (!authCookie) {
         showError('Please sign in to GoodJob first');
         document.getElementById('loginPrompt').style.display = 'block';
         document.getElementById('mainForm').style.display = 'none';
         return;
+      }
+
+      // Parse the auth cookie to get the session
+      let session;
+      try {
+        const cookieData = JSON.parse(decodeURIComponent(authCookie.value));
+        session = cookieData;
+      } catch (e) {
+        throw new Error('Invalid session data');
       }
 
       const response = await fetch(`${SUPABASE_URL}/rest/v1/jobs`, {
@@ -59,13 +75,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         })
       });
 
-      if (!response.ok) throw new Error('Failed to save job');
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to save job: ${errorText}`);
+      }
 
       showSuccess('Job saved successfully!');
       setTimeout(() => window.close(), 1500);
     } catch (error) {
       console.error('Error:', error);
-      showError('Failed to save job. Please try again.');
+      showError('Failed to save job. Make sure you\'re signed in at good-job.app');
     } finally {
       submitBtn.disabled = false;
       submitBtn.textContent = 'Add to GoodJob';
