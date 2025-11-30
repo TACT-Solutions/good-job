@@ -3,10 +3,9 @@
 ## 🐛 Known Issues
 
 ### Chrome Extension
-- [ ] Job extraction accuracy needs improvement
-  - Some fields not auto-filling correctly
-  - Need better selectors for various job boards
-  - Consider adding more job board templates
+- [ ] Edge cases on some job boards may need refinement
+  - Test coverage for all 11+ boards could be improved
+  - Some niche ATS platforms not yet supported
 
 ## ✅ Recently Completed
 
@@ -21,19 +20,32 @@
 - ✅ JobPipeline Kanban/List views with premium styling
 - ✅ Fixed dark mode override causing black backgrounds
 - ✅ Modern landing page with hero, features, CTA
+- ✅ Collapsible sidebar with hover expand
+
+### Chrome Extension Overhaul (Completed 2025-11-29)
+- ✅ Expanded job board support (11+ job boards):
+  - LinkedIn, Indeed, Glassdoor, ZipRecruiter
+  - Monster, Greenhouse, Lever
+  - Remote.co, We Work Remotely, Wellfound, Dice
+- ✅ Advanced field extraction:
+  - Location, salary range, job type (remote/hybrid/onsite)
+  - Posting date detection
+  - Source tracking
+- ✅ Premium popup UI matching web app design
+- ✅ Duplicate job detection with warnings
+- ✅ Status selection on save (Saved/Applied/Interviewing)
+- ✅ Live statistics (total jobs, jobs this week)
+- ✅ Better error handling and user feedback
+- ✅ Improved data cleaning and extraction logic
 
 ## 🚀 Planned Enhancements
 
 ### High Priority
-- [ ] Collapsible sidebar with hover expand
-  - Icon-only collapsed state
-  - Expands on hover
-  - Always visible for navigation
+- [ ] Quick-save button for extension (save without opening popup)
 
-- [ ] Improve Chrome extension job extraction
-  - Add more job board support (Glassdoor, ZipRecruiter, etc.)
-  - Better fallback extraction logic
-  - Test with more real-world job postings
+- [ ] Recently saved jobs view in extension popup
+
+- [ ] Bulk save feature (save multiple jobs from search results)
 
 - [ ] Email integration (Gmail/Outlook OAuth)
   - Send emails directly from dashboard
@@ -76,13 +88,14 @@
 
 ## 🎨 UI/UX Improvements
 - ✅ Kanban board view for jobs
-- [ ] Drag-and-drop status updates (visual only, need drag functionality)
-- [ ] Collapsible sidebar with icon mode
+- ✅ Collapsible sidebar with icon mode
+- [ ] Drag-and-drop status updates (need drag functionality)
 - [ ] Quick actions menu
 - [ ] Keyboard shortcuts
 - [ ] Better mobile responsive design
 - [ ] Customizable dashboard widgets
 - [ ] Job comparison tool
+- [ ] Dark mode toggle
 
 ## 🔧 Technical Debt
 - [ ] Add comprehensive error handling

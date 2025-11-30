@@ -69,8 +69,15 @@
 
 - ✅ **Chrome Extension**
   - One-click job saving from any website
-  - Auto-detection for LinkedIn, Indeed, Greenhouse, Lever
-  - Manual editing before saving
+  - Auto-detection for 11+ job boards:
+    - LinkedIn, Indeed, Glassdoor, ZipRecruiter
+    - Monster, Greenhouse, Lever
+    - Remote.co, We Work Remotely, Wellfound, Dice
+  - Advanced field extraction (location, salary, job type, posting date)
+  - Duplicate detection with warnings
+  - Premium UI matching web app design
+  - Status selection on save (Saved/Applied/Interviewing)
+  - Live statistics display
   - Session-based authentication
 
 ---
@@ -175,6 +182,12 @@ GoodJob/
 - title (TEXT)
 - company (TEXT)
 - url (TEXT, nullable)
+- location (TEXT, nullable) - Job location
+- salary_range (TEXT, nullable) - Salary information
+- job_type (ENUM: remote, hybrid, onsite, unknown) - Work location type
+- seniority_level (TEXT, nullable) - Junior, Mid, Senior, etc.
+- posted_date (TIMESTAMP, nullable) - When job was posted
+- source (TEXT, nullable) - Which job board it came from
 - raw_description (TEXT, nullable)
 - extracted_description (TEXT, nullable) - JSON with AI insights
 - status (ENUM: saved, applied, interviewing, offer, rejected)
@@ -246,19 +259,34 @@ firstname@company.com
 
 ### 3. Chrome Extension
 
-**Supported Sites**:
-- LinkedIn Jobs
-- Indeed
-- Greenhouse ATS
-- Lever ATS
-- Generic fallback
+**Supported Sites** (11+ job boards):
+- **Major Boards**: LinkedIn, Indeed, Glassdoor, ZipRecruiter, Monster
+- **ATS Platforms**: Greenhouse, Lever
+- **Remote-First**: Remote.co, We Work Remotely
+- **Tech/Startup**: Wellfound (AngelList), Dice
+- **Generic fallback** for unsupported sites
+
+**Advanced Extraction**:
+- Job title, company, description
+- Location, salary range
+- Job type (Remote/Hybrid/Onsite) with auto-detection
+- Posting date (relative date parsing)
+- Source tracking
+
+**Smart Features**:
+- Duplicate detection (warns if similar job already saved)
+- Status selection (Saved/Applied/Interviewing)
+- Live statistics (total jobs, jobs this week)
+- Premium UI matching web app
 
 **How it works**:
 1. User clicks extension icon
-2. Content script extracts visible job data
-3. Popup auto-fills form
-4. User reviews/edits
-5. Saves to Supabase via REST API
+2. Content script extracts visible job data (11+ selectors per board)
+3. Popup auto-fills all fields with extracted data
+4. Duplicate check runs automatically
+5. User reviews/edits and selects status
+6. Saves to Supabase with all metadata
+7. Stats update in real-time
 
 ---
 
