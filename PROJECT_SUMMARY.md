@@ -15,16 +15,29 @@
   - Secure session management
   - Row Level Security (RLS)
 
+- ✅ **Modern Premium UI/UX**
+  - Custom design system with Inter font
+  - Gradient stat cards with animations
+  - Glassmorphism effects and depth
+  - Custom color palette (slate/blue/amber/purple/emerald)
+  - Micro-interactions and hover effects
+  - Consistent design across all pages
+  - Responsive layouts
+
 - ✅ **Dashboard**
   - Overview statistics (total jobs, by status)
-  - Recent applications
+  - Premium gradient stat cards
+  - Recent applications with animated lists
   - Quick navigation
 
 - ✅ **Job Tracking**
   - Add jobs manually
   - Full CRUD operations
   - Status pipeline (Saved → Applied → Interviewing → Offer → Rejected)
+  - Kanban board view with drag visualization
+  - List view toggle
   - Job details with notes
+  - Expandable job cards with hover effects
   - Filter by status
 
 - ✅ **Contact Management**
@@ -68,7 +81,8 @@
 |-------|-----------|-----|
 | **Frontend** | Next.js 14 (App Router) | Modern React framework, SEO, SSR |
 | | TypeScript | Type safety, better DX |
-| | Tailwind CSS | Rapid UI development |
+| | Tailwind CSS | Rapid UI development, custom design system |
+| | Inter Font | Modern typography |
 | **Backend** | Supabase | PostgreSQL, Auth, RLS, real-time |
 | **AI** | Groq SDK (Llama 3.3 70B) | Fast, cost-effective inference |
 | **Deployment** | Vercel | Zero-config Next.js hosting |
@@ -355,6 +369,7 @@ NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 GROQ_API_KEY=your-groq-api-key
+ANTHROPIC_API_KEY=your-anthropic-api-key (optional)
 ```
 
 ### 2. Chrome Extension (`chrome-extension/popup.js`)
