@@ -83,6 +83,7 @@ function setupAuthForm() {
 
     try {
       // Sign in with Supabase
+      console.log('Attempting login with email:', email);
       const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
         method: 'POST',
         headers: {
@@ -96,9 +97,12 @@ function setupAuthForm() {
       });
 
       const data = await response.json();
+      console.log('Auth response:', response.status, data);
 
       if (!response.ok) {
-        throw new Error(data.error_description || data.msg || 'Invalid credentials');
+        const errorMsg = data.error_description || data.error || data.msg || 'Invalid credentials';
+        console.error('Auth failed:', errorMsg);
+        throw new Error(errorMsg);
       }
 
       // Store session
