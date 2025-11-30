@@ -30,12 +30,12 @@ export default function JobPipeline({ jobs }: { jobs: Job[] }) {
         <div className="mb-4 flex justify-end">
           <button
             onClick={() => setViewMode('kanban')}
-            className="px-4 py-2 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+            className="px-4 py-2 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-medium"
           >
             Switch to Kanban
           </button>
         </div>
-        <div className="bg-white rounded-lg shadow">
+        <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
           {jobs.map((job) => (
             <JobCard key={job.id} job={job} />
           ))}
@@ -49,7 +49,7 @@ export default function JobPipeline({ jobs }: { jobs: Job[] }) {
       <div className="mb-4 flex justify-end">
         <button
           onClick={() => setViewMode('list')}
-          className="px-4 py-2 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+          className="px-4 py-2 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-medium"
         >
           Switch to List
         </button>
@@ -58,10 +58,10 @@ export default function JobPipeline({ jobs }: { jobs: Job[] }) {
         {STATUSES.map((status) => {
           const statusJobs = jobs.filter((job) => job.status === status.key);
           return (
-            <div key={status.key} className="bg-gray-50 rounded-lg p-4">
+            <div key={status.key} className="bg-white rounded-xl border border-gray-200 p-4">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-gray-900">{status.label}</h3>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${status.color}`}>
+                <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${status.color}`}>
                   {statusJobs.length}
                 </span>
               </div>

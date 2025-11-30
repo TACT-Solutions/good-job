@@ -29,29 +29,29 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="text-sm text-gray-500 mb-1">Total Jobs</div>
+        <div className="bg-white p-6 rounded-xl border border-gray-200 hover:border-gray-300 transition-colors">
+          <div className="text-sm font-medium text-gray-500 mb-2">Total Jobs</div>
           <div className="text-3xl font-bold text-gray-900">{stats.total}</div>
         </div>
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="text-sm text-gray-500 mb-1">Saved</div>
+        <div className="bg-white p-6 rounded-xl border border-gray-200 hover:border-blue-300 transition-colors">
+          <div className="text-sm font-medium text-gray-500 mb-2">Saved</div>
           <div className="text-3xl font-bold text-blue-600">{stats.saved}</div>
         </div>
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="text-sm text-gray-500 mb-1">Applied</div>
+        <div className="bg-white p-6 rounded-xl border border-gray-200 hover:border-yellow-300 transition-colors">
+          <div className="text-sm font-medium text-gray-500 mb-2">Applied</div>
           <div className="text-3xl font-bold text-yellow-600">{stats.applied}</div>
         </div>
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="text-sm text-gray-500 mb-1">Interviewing</div>
+        <div className="bg-white p-6 rounded-xl border border-gray-200 hover:border-purple-300 transition-colors">
+          <div className="text-sm font-medium text-gray-500 mb-2">Interviewing</div>
           <div className="text-3xl font-bold text-purple-600">{stats.interviewing}</div>
         </div>
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="text-sm text-gray-500 mb-1">Offers</div>
+        <div className="bg-white p-6 rounded-xl border border-gray-200 hover:border-green-300 transition-colors">
+          <div className="text-sm font-medium text-gray-500 mb-2">Offers</div>
           <div className="text-3xl font-bold text-green-600">{stats.offer}</div>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-gray-900">Recent Applications</h2>
           <Link

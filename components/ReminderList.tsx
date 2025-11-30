@@ -57,7 +57,7 @@ export default function ReminderList({ reminders: initialReminders }: { reminder
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h2 className="text-xl font-semibold mb-4">Upcoming</h2>
         {upcomingReminders.length > 0 ? (
           <div className="space-y-3">
@@ -106,7 +106,7 @@ export default function ReminderList({ reminders: initialReminders }: { reminder
       </div>
 
       {completedReminders.length > 0 && (
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h2 className="text-xl font-semibold mb-4">Completed</h2>
           <div className="space-y-3">
             {completedReminders.map((reminder: any) => (
