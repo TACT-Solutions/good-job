@@ -1,6 +1,9 @@
 const SUPABASE_URL = 'https://qtylybvgoyaawvoexaxt.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0eWx5YnZnb3lhYXd2b2V4YXh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzODU5NTIsImV4cCI6MjA3OTk2MTk1Mn0.HrrYAIMGl5Zf763hyBBi6ZS4yY-T78bxnoqyjV5t2TUEY';
 
+// Initialize Supabase client
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 // Initialize on load
 document.addEventListener('DOMContentLoaded', async () => {
   // Check if user is already logged in
@@ -41,13 +44,8 @@ async function storeSession(session) {
 // Verify session is still valid
 async function verifySession(session) {
   try {
-    const response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${session.access_token}`
-      }
-    });
-    return response.ok;
+    const { data, error } = await supabase.auth.getUser(session.access_token);
+    return !error && data.user;
   } catch (e) {
     return false;
   }
@@ -82,35 +80,26 @@ function setupAuthForm() {
     authBtn.textContent = 'Signing in...';
 
     try {
-      // Sign in with Supabase
       console.log('Attempting login with email:', email);
-      const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': SUPABASE_ANON_KEY
-        },
-        body: JSON.stringify({
-          email,
-          password
-        })
+
+      // Sign in with Supabase client
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
       });
 
-      const data = await response.json();
-      console.log('Auth response:', response.status, data);
+      console.log('Auth response:', { data, error });
 
-      if (!response.ok) {
-        const errorMsg = data.error_description || data.error || data.msg || 'Invalid credentials';
-        console.error('Auth failed:', errorMsg);
-        throw new Error(errorMsg);
+      if (error) {
+        throw new Error(error.message);
       }
 
       // Store session
       await storeSession({
-        access_token: data.access_token,
-        refresh_token: data.refresh_token,
+        access_token: data.session.access_token,
+        refresh_token: data.session.refresh_token,
         user: data.user,
-        expires_at: data.expires_at
+        expires_at: data.session.expires_at
       });
 
       // Show success and switch to job form
@@ -155,27 +144,20 @@ function setupJobForm() {
       const url = document.getElementById('url').value;
       const description = document.getElementById('description').value;
 
-      const response = await fetch(`${SUPABASE_URL}/rest/v1/jobs`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${session.access_token}`,
-          'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify({
+      // Use Supabase client to insert job
+      const { data, error } = await supabase
+        .from('jobs')
+        .insert({
           user_id: session.user.id,
           title,
           company,
           url,
           raw_description: description,
           status: 'saved'
-        })
-      });
+        });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to save job: ${errorText}`);
+      if (error) {
+        throw new Error(error.message);
       }
 
       showMessage(messageDiv, 'Job saved successfully!', 'success');
@@ -196,6 +178,7 @@ function setupLogout() {
   const logoutBtn = document.getElementById('logoutBtn');
   logoutBtn.addEventListener('click', async () => {
     await chrome.storage.local.remove('supabase_session');
+    await supabase.auth.signOut();
     showLoginForm();
     // Clear form fields
     document.getElementById('email').value = '';
