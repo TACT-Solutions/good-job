@@ -47,35 +47,38 @@ export default function JobCard({ job }: { job: Job }) {
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+    <div className="group bg-white border border-slate-200 rounded-xl p-5 hover:shadow-soft hover:border-blue-200 transition-all duration-300">
       <div className="cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
-        <h4 className="font-semibold text-gray-900 text-sm">{job.title}</h4>
-        <p className="text-xs text-gray-600 mt-1">{job.company}</p>
+        <h4 className="font-semibold text-slate-900 text-base group-hover:text-blue-600 transition-colors">{job.title}</h4>
+        <p className="text-sm text-slate-600 mt-1">{job.company}</p>
         {job.url && (
           <a
             href={job.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs text-blue-600 hover:underline mt-2 inline-block"
+            className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 hover:underline mt-2 font-medium"
             onClick={(e) => e.stopPropagation()}
           >
             View posting
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
           </a>
         )}
       </div>
 
       {isExpanded && (
-        <div className="mt-4 pt-4 border-t border-gray-200 space-y-3">
+        <div className="mt-4 pt-4 border-t border-slate-200 space-y-3 animate-fade-in">
           {job.notes && (
-            <div>
-              <p className="text-xs font-medium text-gray-700 mb-1">Notes:</p>
-              <p className="text-xs text-gray-600">{job.notes}</p>
+            <div className="bg-slate-50 rounded-lg p-3">
+              <p className="text-xs font-semibold text-slate-700 mb-1">Notes:</p>
+              <p className="text-sm text-slate-600">{job.notes}</p>
             </div>
           )}
 
           <div>
-            <p className="text-xs font-medium text-gray-700 mb-2">Move to:</p>
-            <div className="flex flex-wrap gap-1">
+            <p className="text-xs font-semibold text-slate-700 mb-2">Move to:</p>
+            <div className="flex flex-wrap gap-2">
               {(['saved', 'applied', 'interviewing', 'offer', 'rejected'] as const).map(
                 (status) =>
                   status !== job.status && (
@@ -83,7 +86,7 @@ export default function JobCard({ job }: { job: Job }) {
                       key={status}
                       onClick={() => updateStatus(status)}
                       disabled={isUpdating}
-                      className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded disabled:opacity-50"
+                      className="px-3 py-1.5 text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors disabled:opacity-50"
                     >
                       {status}
                     </button>
@@ -94,8 +97,11 @@ export default function JobCard({ job }: { job: Job }) {
 
           <button
             onClick={deleteJob}
-            className="text-xs text-red-600 hover:text-red-700 font-medium"
+            className="text-sm text-red-600 hover:text-red-700 font-medium flex items-center gap-1"
           >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
             Delete job
           </button>
         </div>
