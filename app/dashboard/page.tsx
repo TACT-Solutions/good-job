@@ -74,7 +74,7 @@ export default async function DashboardPage() {
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-slate-900">Recent Applications</h2>
           <Link
-            href="/jobs"
+            href="/dashboard/jobs"
             className="group inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-xl hover:shadow-lg transition-all duration-300 font-medium"
           >
             View all
@@ -118,7 +118,7 @@ export default async function DashboardPage() {
             </div>
             <p className="text-slate-500 mb-6 text-lg">No jobs tracked yet</p>
             <Link
-              href="/jobs"
+              href="/dashboard/jobs"
               className="inline-block px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-xl hover:shadow-lg transition-all duration-300 font-semibold"
             >
               Add your first job

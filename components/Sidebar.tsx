@@ -6,9 +6,9 @@ import { useState } from 'react';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: '📊' },
-  { name: 'Jobs', href: '/jobs', icon: '💼' },
-  { name: 'Contacts', href: '/contacts', icon: '👥' },
-  { name: 'Tasks', href: '/tasks', icon: '✓' },
+  { name: 'Jobs', href: '/dashboard/jobs', icon: '💼' },
+  { name: 'Contacts', href: '/dashboard/contacts', icon: '👥' },
+  { name: 'Tasks', href: '/dashboard/tasks', icon: '✓' },
 ];
 
 export default function Sidebar() {
