@@ -1,13 +1,8 @@
 const SUPABASE_URL = 'https://qtylybvgoyaawvoexaxt.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0eWx5YnZnb3lhYXd2b2V4YXh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzODU5NTIsImV4cCI6MjA3OTk2MTk1Mn0.HrrYAIMGl5Zf763hyBBi6ZS4yY-T78bxnoqyjV5t2TU';
 
-// Check if Supabase loaded
-console.log('window.supabase:', window.supabase);
-console.log('Supabase available:', !!window.supabase);
-
 // Initialize Supabase client
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-console.log('Supabase client created:', supabase);
 
 // Initialize on load
 document.addEventListener('DOMContentLoaded', async () => {
@@ -85,15 +80,11 @@ function setupAuthForm() {
     authBtn.textContent = 'Signing in...';
 
     try {
-      console.log('Attempting login with email:', email);
-
       // Sign in with Supabase client
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
-
-      console.log('Auth response:', { data, error });
 
       if (error) {
         throw new Error(error.message);
