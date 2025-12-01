@@ -6,6 +6,10 @@ const groq = new Groq({
 
 export async function enrichJobDescription(jobDescription: string) {
   try {
+    console.log('[AI] Starting job description enrichment...');
+    console.log('[AI] API Key present:', !!process.env.GROQ_API_KEY);
+    console.log('[AI] Description length:', jobDescription?.length || 0);
+
     const completion = await groq.chat.completions.create({
       messages: [
         {
@@ -30,11 +34,19 @@ export async function enrichJobDescription(jobDescription: string) {
     });
 
     const result = completion.choices[0]?.message?.content;
+    console.log('[AI] Got response from Groq:', !!result);
+
     if (!result) throw new Error('No response from AI');
 
-    return JSON.parse(result);
+    const parsed = JSON.parse(result);
+    console.log('[AI] Successfully parsed JSON response');
+    return parsed;
   } catch (error) {
-    console.error('AI enrichment error:', error);
+    console.error('[AI] Enrichment error details:', {
+      error: error instanceof Error ? error.message : String(error),
+      name: error instanceof Error ? error.name : 'Unknown',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return {
       summary: 'Failed to analyze job description',
       skills: [],
@@ -78,6 +90,8 @@ export async function generateEmailTemplate(
 
 export async function extractCompanyInfo(companyName: string, jobDescription: string) {
   try {
+    console.log('[AI] Starting company info extraction...');
+
     const completion = await groq.chat.completions.create({
       messages: [
         {
@@ -101,11 +115,18 @@ export async function extractCompanyInfo(companyName: string, jobDescription: st
     });
 
     const result = completion.choices[0]?.message?.content;
+    console.log('[AI] Got company info response:', !!result);
+
     if (!result) throw new Error('No response');
 
-    return JSON.parse(result);
+    const parsed = JSON.parse(result);
+    console.log('[AI] Successfully parsed company info JSON');
+    return parsed;
   } catch (error) {
-    console.error('Company info extraction error:', error);
+    console.error('[AI] Company info extraction error:', {
+      error: error instanceof Error ? error.message : String(error),
+      name: error instanceof Error ? error.name : 'Unknown',
+    });
     return {
       industry: 'Unknown',
       size: 'Unknown',
