@@ -16,14 +16,24 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (!user) {
+      console.error('[Enrichment] Unauthorized - no user');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { jobId, description, company, title } = await request.json();
+    const body = await request.json();
+    console.log('[Enrichment] Request body:', {
+      hasJobId: !!body.jobId,
+      hasDescription: !!body.description,
+      hasCompany: !!body.company,
+      hasTitle: !!body.title
+    });
+
+    const { jobId, description, company, title } = body;
 
     if (!jobId || !description) {
+      console.error('[Enrichment] Missing required fields:', { jobId: !!jobId, description: !!description });
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Missing required fields: jobId and description are required' },
         { status: 400 }
       );
     }
@@ -194,9 +204,12 @@ export async function POST(request: NextRequest) {
     console.log('[Enrichment] Successfully enriched job with actionable data and saved contacts');
     return NextResponse.json({ success: true, data: extractedData });
   } catch (error) {
-    console.error('Enrichment error:', error);
+    console.error('[Enrichment] Fatal error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    console.error('[Enrichment] Error details:', { message: errorMessage, stack: errorStack });
     return NextResponse.json(
-      { error: 'Failed to enrich job data' },
+      { error: `Failed to enrich job data: ${errorMessage}` },
       { status: 500 }
     );
   }
