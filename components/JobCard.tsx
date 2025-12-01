@@ -53,6 +53,11 @@ export default function JobCard({ job }: { job: Job }) {
   };
 
   const handleEnrich = async () => {
+    if (!job.raw_description) {
+      alert('This job does not have a description to enrich. Please add a job description first.');
+      return;
+    }
+
     setEnriching(true);
     try {
       const response = await fetch('/api/enrichment', {
@@ -60,7 +65,7 @@ export default function JobCard({ job }: { job: Job }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           jobId: job.id,
-          description: job.raw_description || '',
+          description: job.raw_description,
           company: job.company,
           title: job.title
         })
@@ -94,8 +99,8 @@ export default function JobCard({ job }: { job: Job }) {
         {/* AI Enrichment Badge */}
         <JobEnrichmentBadge job={{ ...job, extracted_description: enriched }} />
 
-        {/* Enrich Button (only show if not already enriched) */}
-        {!enriched && (
+        {/* Enrich Button (only show if not already enriched and has description) */}
+        {!enriched && job.raw_description && (
           <button
             onClick={(e) => {
               e.stopPropagation();
