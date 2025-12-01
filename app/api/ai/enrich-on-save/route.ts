@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { enrichJobDescription, extractCompanyInfo } from '@/lib/ai';
+import {
+  scrapeCompanyWebsite,
+  generateActionableInsights,
+  findCompanyContacts,
+} from '@/lib/web-scraper';
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,20 +39,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Job not found' }, { status: 404 });
     }
 
-    // Parallel AI calls with 5-second timeout
+    // Parallel AI calls with 10-second timeout (increased for additional enrichment)
     const enrichmentPromise = Promise.race([
       Promise.all([
         enrichJobDescription(job.raw_description || ''),
         extractCompanyInfo(job.company, job.raw_description || ''),
+        scrapeCompanyWebsite(job.company),
       ]),
       new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('AI timeout')), 5000)
+        setTimeout(() => reject(new Error('AI timeout')), 10000)
       ),
     ]);
 
-    const [jobInfo, companyInfo] = await enrichmentPromise;
+    const [jobInfo, companyInfo, companyData] = await enrichmentPromise;
 
-    // Combine insights
+    // Generate actionable insights
+    const [actionableInsights, contactStrategies] = await Promise.all([
+      generateActionableInsights(
+        job.company,
+        job.title,
+        companyData,
+        job.raw_description || ''
+      ),
+      findCompanyContacts(
+        job.company,
+        companyInfo.department || 'Unknown',
+        job.title
+      ),
+    ]);
+
+    // Combine all insights
     const extractedData = {
       summary: jobInfo.summary,
       skills: jobInfo.skills,
@@ -58,6 +79,28 @@ export async function POST(request: NextRequest) {
       companySize: companyInfo.size,
       hiringManager: companyInfo.hiringManager,
       department: companyInfo.department,
+
+      // Company research
+      companyWebsite: companyData.websiteUrl,
+      companyAbout: companyData.aboutText,
+      companyNews: companyData.recentNews,
+      companyTechStack: companyData.techStack,
+      companyValues: companyData.companyValues,
+      companyTeamSize: companyData.teamSize,
+      companyFounded: companyData.foundingYear,
+      companyHQ: companyData.headquarters,
+
+      // Actionable insights
+      whyThisMatters: actionableInsights.whyThisMatters,
+      talkingPoints: actionableInsights.talkingPoints,
+      nextSteps: actionableInsights.nextSteps,
+      emailSubjectLines: actionableInsights.emailSubjectLines,
+      interviewQuestions: actionableInsights.interviewQuestions,
+
+      // Contact discovery
+      suggestedRoles: contactStrategies.suggestedRoles,
+      searchStrategies: contactStrategies.searchStrategies,
+      linkedInSearchUrl: contactStrategies.linkedInSearchUrl,
     };
 
     // Update job with enrichment

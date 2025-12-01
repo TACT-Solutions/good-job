@@ -346,6 +346,224 @@ export default function JobDetailView({
             </div>
           )}
 
+          {/* Actionable Insights - Why This Matters */}
+          {enrichedData?.whyThisMatters && (
+            <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl border border-emerald-200 p-6">
+              <h3 className="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2">
+                🎯 Why This Matters
+              </h3>
+              <p className="text-slate-700 leading-relaxed">{enrichedData.whyThisMatters}</p>
+            </div>
+          )}
+
+          {/* Company Research */}
+          {enrichedData?.companyAbout && (
+            <div className="bg-white rounded-xl shadow-soft border border-slate-200 p-6">
+              <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                🏢 Company Research
+              </h3>
+
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-sm font-semibold text-slate-700 mb-2">About</h4>
+                  <p className="text-slate-600">{enrichedData.companyAbout}</p>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  {enrichedData.companyTeamSize && (
+                    <div>
+                      <span className="text-xs font-semibold text-slate-500 uppercase">Team Size</span>
+                      <p className="text-slate-900 font-medium">{enrichedData.companyTeamSize}</p>
+                    </div>
+                  )}
+                  {enrichedData.companyFounded && (
+                    <div>
+                      <span className="text-xs font-semibold text-slate-500 uppercase">Founded</span>
+                      <p className="text-slate-900 font-medium">{enrichedData.companyFounded}</p>
+                    </div>
+                  )}
+                  {enrichedData.companyHQ && (
+                    <div>
+                      <span className="text-xs font-semibold text-slate-500 uppercase">HQ</span>
+                      <p className="text-slate-900 font-medium">{enrichedData.companyHQ}</p>
+                    </div>
+                  )}
+                </div>
+
+                {enrichedData.companyNews && enrichedData.companyNews.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-slate-700 mb-2">Recent News & Updates</h4>
+                    <ul className="space-y-2">
+                      {enrichedData.companyNews.map((news: string, idx: number) => (
+                        <li key={idx} className="flex items-start gap-2 text-slate-600">
+                          <span className="text-emerald-500 mt-1">•</span>
+                          <span>{news}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {enrichedData.companyTechStack && enrichedData.companyTechStack.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-slate-700 mb-2">Tech Stack</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {enrichedData.companyTechStack.map((tech: string, idx: number) => (
+                        <span key={idx} className="px-3 py-1 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium">
+                          {tech}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {enrichedData.companyValues && enrichedData.companyValues.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-slate-700 mb-2">Company Values</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {enrichedData.companyValues.map((value: string, idx: number) => (
+                        <span key={idx} className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">
+                          {value}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {enrichedData.companyWebsite && (
+                  <a
+                    href={enrichedData.companyWebsite}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium text-sm"
+                  >
+                    Visit Company Website
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Next Steps - Action Plan */}
+          {enrichedData?.nextSteps && enrichedData.nextSteps.length > 0 && (
+            <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl border border-amber-200 p-6">
+              <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                📋 Action Plan
+              </h3>
+              <div className="space-y-3">
+                {enrichedData.nextSteps.map((step: string, idx: number) => (
+                  <div key={idx} className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-6 h-6 bg-amber-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                      {idx + 1}
+                    </div>
+                    <p className="text-slate-700 flex-1">{step}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Talking Points */}
+          {enrichedData?.talkingPoints && enrichedData.talkingPoints.length > 0 && (
+            <div className="bg-white rounded-xl shadow-soft border border-slate-200 p-6">
+              <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                💬 Talking Points for Outreach
+              </h3>
+              <ul className="space-y-3">
+                {enrichedData.talkingPoints.map((point: string, idx: number) => (
+                  <li key={idx} className="flex items-start gap-2">
+                    <span className="text-blue-500 font-bold">•</span>
+                    <span className="text-slate-700">{point}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Email Subject Lines */}
+          {enrichedData?.emailSubjectLines && enrichedData.emailSubjectLines.length > 0 && (
+            <div className="bg-white rounded-xl shadow-soft border border-slate-200 p-6">
+              <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                ✉️ Email Subject Line Ideas
+              </h3>
+              <div className="space-y-2">
+                {enrichedData.emailSubjectLines.map((subject: string, idx: number) => (
+                  <div key={idx} className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                    <p className="text-slate-700 font-medium">{subject}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Interview Questions */}
+          {enrichedData?.interviewQuestions && enrichedData.interviewQuestions.length > 0 && (
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-6">
+              <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                ❓ Smart Interview Questions
+              </h3>
+              <div className="space-y-3">
+                {enrichedData.interviewQuestions.map((question: string, idx: number) => (
+                  <div key={idx} className="flex items-start gap-2">
+                    <span className="text-blue-600 font-bold text-lg">Q{idx + 1}:</span>
+                    <p className="text-slate-700 flex-1">{question}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Contact Discovery */}
+          {enrichedData?.suggestedRoles && enrichedData.suggestedRoles.length > 0 && (
+            <div className="bg-white rounded-xl shadow-soft border border-slate-200 p-6">
+              <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                🔍 Who to Contact
+              </h3>
+
+              <div className="mb-4">
+                <h4 className="text-sm font-semibold text-slate-700 mb-2">Target Roles</h4>
+                <div className="flex flex-wrap gap-2">
+                  {enrichedData.suggestedRoles.map((role: string, idx: number) => (
+                    <span key={idx} className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium">
+                      {role}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {enrichedData.searchStrategies && enrichedData.searchStrategies.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="text-sm font-semibold text-slate-700 mb-2">Search Strategies</h4>
+                  <ul className="space-y-2">
+                    {enrichedData.searchStrategies.map((strategy: string, idx: number) => (
+                      <li key={idx} className="flex items-start gap-2 text-slate-600 text-sm">
+                        <span className="text-blue-500">▸</span>
+                        <span>{strategy}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {enrichedData.linkedInSearchUrl && (
+                <a
+                  href={enrichedData.linkedInSearchUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold text-sm"
+                >
+                  Search on LinkedIn
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </a>
+              )}
+            </div>
+          )}
+
           {/* Job Description */}
           {job.raw_description && (
             <div className="bg-white rounded-xl shadow-soft border border-slate-200 p-6">

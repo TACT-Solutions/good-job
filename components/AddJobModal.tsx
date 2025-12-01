@@ -44,7 +44,8 @@ export default function AddJobModal({ isOpen, onClose }: { isOpen: boolean; onCl
             body: JSON.stringify({
               jobId: newJob.id,
               description: description,
-              company: company
+              company: company,
+              title: title,  // Pass title for actionable insights
             })
           });
           // Success - job added and enriched
