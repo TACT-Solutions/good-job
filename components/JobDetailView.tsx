@@ -516,11 +516,130 @@ export default function JobDetailView({
             </div>
           )}
 
+          {/* Hiring Manager Intelligence */}
+          {enrichedData?.hiringManagerTitle && (
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200 p-6">
+              <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                👤 Hiring Manager
+              </h3>
+
+              {enrichedData.hiringManagerName ? (
+                <div className="space-y-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <p className="font-bold text-lg text-slate-900">{enrichedData.hiringManagerName}</p>
+                      <p className="text-sm text-slate-600">{enrichedData.hiringManagerTitle}</p>
+                    </div>
+                    {enrichedData.hiringManagerLinkedIn && (
+                      <a
+                        href={enrichedData.hiringManagerLinkedIn}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
+                      >
+                        LinkedIn
+                      </a>
+                    )}
+                  </div>
+
+                  {enrichedData.hiringManagerEmails && enrichedData.hiringManagerEmails.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-700 mb-2">Email Suggestions</h4>
+                      <div className="space-y-2">
+                        {enrichedData.hiringManagerEmails.map((emailData: any, idx: number) => (
+                          <div key={idx} className="flex items-center justify-between bg-white rounded-lg p-3 border border-slate-200">
+                            <div className="flex-1">
+                              <a href={`mailto:${emailData.email}`} className="text-blue-600 hover:underline font-medium">
+                                {emailData.email}
+                              </a>
+                              <p className="text-xs text-slate-500 mt-1">Pattern: {emailData.pattern}</p>
+                            </div>
+                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                              emailData.confidence === 'confirmed' ? 'bg-green-100 text-green-700' :
+                              emailData.confidence === 'high' ? 'bg-blue-100 text-blue-700' :
+                              emailData.confidence === 'medium' ? 'bg-amber-100 text-amber-700' :
+                              'bg-slate-100 text-slate-600'
+                            }`}>
+                              {emailData.confidence}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {enrichedData.hiringManagerReasoning && (
+                    <div className="bg-white rounded-lg p-3 border border-slate-200">
+                      <p className="text-sm text-slate-600">{enrichedData.hiringManagerReasoning}</p>
+                    </div>
+                  )}
+
+                  {enrichedData.emailPatterns && enrichedData.emailPatterns.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-700 mb-2">Email Patterns at this Company</h4>
+                      <div className="space-y-1">
+                        {enrichedData.emailPatterns.map((pattern: any, idx: number) => (
+                          <div key={idx} className="text-sm text-slate-600">
+                            <span className="font-mono bg-slate-100 px-2 py-1 rounded">{pattern.pattern}</span>
+                            <span className="text-xs text-slate-500 ml-2">({pattern.confidence}% confidence)</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div>
+                  <p className="font-semibold text-slate-900">Likely Hiring Manager:</p>
+                  <p className="text-slate-700 mt-1">{enrichedData.hiringManagerTitle}</p>
+                  {enrichedData.hiringManagerReasoning && (
+                    <p className="text-sm text-slate-600 mt-2">{enrichedData.hiringManagerReasoning}</p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Team Contacts */}
+          {enrichedData?.teamContacts && enrichedData.teamContacts.length > 0 && (
+            <div className="bg-white rounded-xl shadow-soft border border-slate-200 p-6">
+              <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                👥 Team Contacts ({enrichedData.totalContactsFound || enrichedData.teamContacts.length})
+              </h3>
+              <div className="space-y-3">
+                {enrichedData.teamContacts.map((contact: any, idx: number) => (
+                  <div key={idx} className="border-b border-slate-100 pb-3 last:border-0">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <p className="font-semibold text-slate-900">{contact.name}</p>
+                        <p className="text-sm text-slate-600">{contact.title}</p>
+                        {contact.email && (
+                          <a href={`mailto:${contact.email}`} className="text-sm text-blue-600 hover:underline block mt-1">
+                            {contact.email}
+                          </a>
+                        )}
+                        <p className="text-xs text-slate-500 mt-1">Source: {contact.source}</p>
+                      </div>
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                        contact.confidence === 'confirmed' ? 'bg-green-100 text-green-700' :
+                        contact.confidence === 'high' ? 'bg-blue-100 text-blue-700' :
+                        contact.confidence === 'medium' ? 'bg-amber-100 text-amber-700' :
+                        'bg-slate-100 text-slate-600'
+                      }`}>
+                        {contact.confidence}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Contact Discovery */}
           {enrichedData?.suggestedRoles && enrichedData.suggestedRoles.length > 0 && (
             <div className="bg-white rounded-xl shadow-soft border border-slate-200 p-6">
               <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                🔍 Who to Contact
+                🔍 Contact Search Tools
               </h3>
 
               <div className="mb-4">

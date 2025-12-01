@@ -6,6 +6,7 @@ import {
   generateActionableInsights,
   findCompanyContacts,
 } from '@/lib/web-scraper';
+import { getContactIntelligence } from '@/lib/contact-discovery';
 
 export async function POST(request: NextRequest) {
   try {
@@ -47,8 +48,8 @@ export async function POST(request: NextRequest) {
       scrapeCompanyWebsite(company),
     ]);
 
-    // Generate actionable insights based on all gathered data
-    const [actionableInsights, contactStrategies] = await Promise.all([
+    // Generate actionable insights and discover contacts
+    const [actionableInsights, contactStrategies, contactIntelligence] = await Promise.all([
       generateActionableInsights(
         company,
         jobTitle,
@@ -59,6 +60,12 @@ export async function POST(request: NextRequest) {
         company,
         companyInfo.department || 'Unknown',
         jobTitle
+      ),
+      getContactIntelligence(
+        company,
+        jobTitle,
+        companyInfo.department || 'Unknown',
+        companyData.websiteUrl ? new URL(companyData.websiteUrl).hostname : null
       ),
     ]);
 
@@ -95,6 +102,16 @@ export async function POST(request: NextRequest) {
       suggestedRoles: contactStrategies.suggestedRoles,
       searchStrategies: contactStrategies.searchStrategies,
       linkedInSearchUrl: contactStrategies.linkedInSearchUrl,
+
+      // NEW: Contact intelligence
+      hiringManagerName: contactIntelligence.hiringManager.name,
+      hiringManagerTitle: contactIntelligence.hiringManager.title,
+      hiringManagerEmails: contactIntelligence.hiringManager.emails,
+      hiringManagerLinkedIn: contactIntelligence.hiringManager.linkedin,
+      hiringManagerReasoning: contactIntelligence.hiringManager.reasoning,
+      teamContacts: contactIntelligence.teamContacts,
+      emailPatterns: contactIntelligence.emailPatterns,
+      totalContactsFound: contactIntelligence.totalContactsFound,
     };
 
     const { error } = await supabase
@@ -108,7 +125,46 @@ export async function POST(request: NextRequest) {
 
     if (error) throw error;
 
-    console.log('[Enrichment] Successfully enriched job with actionable data');
+    // AUTO-SAVE DISCOVERED CONTACTS TO DATABASE
+    console.log('[Enrichment] Saving discovered contacts...');
+
+    // Save hiring manager if we have a name
+    if (contactIntelligence.hiringManager.name) {
+      const primaryEmail = contactIntelligence.hiringManager.emails.find(e => e.confidence === 'confirmed' || e.confidence === 'high');
+
+      await supabase.from('contacts').upsert({
+        user_id: user.id,
+        job_id: jobId,
+        name: contactIntelligence.hiringManager.name,
+        title: contactIntelligence.hiringManager.title,
+        email: primaryEmail?.email || null,
+        source: contactIntelligence.hiringManager.linkedin || 'AI Discovery',
+        notes: `${contactIntelligence.hiringManager.reasoning}\n\nEmail suggestions:\n${contactIntelligence.hiringManager.emails.map(e => `- ${e.email} (${e.confidence} confidence)`).join('\n')}`,
+      }, {
+        onConflict: 'user_id,job_id,email',
+        ignoreDuplicates: false,
+      });
+    }
+
+    // Save other team contacts
+    for (const contact of contactIntelligence.teamContacts.slice(0, 5)) { // Limit to top 5
+      if (contact.email || contact.name) {
+        await supabase.from('contacts').upsert({
+          user_id: user.id,
+          job_id: jobId,
+          name: contact.name,
+          title: contact.title,
+          email: contact.email,
+          source: contact.source,
+          notes: contact.linkedin ? `LinkedIn: ${contact.linkedin}` : null,
+        }, {
+          onConflict: 'user_id,job_id,email',
+          ignoreDuplicates: true,
+        });
+      }
+    }
+
+    console.log('[Enrichment] Successfully enriched job with actionable data and saved contacts');
     return NextResponse.json({ success: true, data: extractedData });
   } catch (error) {
     console.error('Enrichment error:', error);
