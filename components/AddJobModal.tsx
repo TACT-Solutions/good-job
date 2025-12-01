@@ -20,16 +20,39 @@ export default function AddJobModal({ isOpen, onClose }: { isOpen: boolean; onCl
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
-      const { error } = await supabase.from('jobs').insert({
-        user_id: user!.id,
-        title,
-        company,
-        url: url || null,
-        raw_description: description || null,
-        status: 'saved',
-      });
+      const { data: newJob, error } = await supabase
+        .from('jobs')
+        .insert({
+          user_id: user!.id,
+          title,
+          company,
+          url: url || null,
+          raw_description: description || null,
+          status: 'saved',
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // Auto-trigger AI enrichment for manually added jobs (non-blocking)
+      if (newJob && description) {
+        try {
+          await fetch('/api/enrichment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              jobId: newJob.id,
+              description: description,
+              company: company
+            })
+          });
+          // Success - job added and enriched
+        } catch (enrichError) {
+          // Silent fail - job is already added, enrichment is optional
+          console.warn('AI enrichment failed:', enrichError);
+        }
+      }
 
       setTitle('');
       setCompany('');

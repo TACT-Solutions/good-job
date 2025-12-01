@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import JobEnrichmentBadge from './JobEnrichmentBadge';
 
 type Job = {
   id: string;
@@ -12,11 +13,15 @@ type Job = {
   status: 'saved' | 'applied' | 'interviewing' | 'offer' | 'rejected';
   notes: string | null;
   created_at: string;
+  raw_description?: string | null;
+  extracted_description?: string | null;
 };
 
 export default function JobCard({ job }: { job: Job }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [enriching, setEnriching] = useState(false);
+  const [enriched, setEnriched] = useState(job.extracted_description);
   const router = useRouter();
   const supabase = createClient();
 
@@ -46,11 +51,56 @@ export default function JobCard({ job }: { job: Job }) {
     }
   };
 
+  const handleEnrich = async () => {
+    setEnriching(true);
+    try {
+      const response = await fetch('/api/enrichment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jobId: job.id,
+          description: job.raw_description || '',
+          company: job.company
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setEnriched(JSON.stringify(data.data));
+        router.refresh();
+      } else {
+        alert('AI enrichment failed. Please try again.');
+      }
+    } catch (error) {
+      console.error('Enrichment failed:', error);
+      alert('AI enrichment failed. Please try again.');
+    } finally {
+      setEnriching(false);
+    }
+  };
+
   return (
     <div className="group bg-white border border-slate-200 rounded-xl p-5 hover:shadow-soft hover:border-blue-200 transition-all duration-300">
       <div className="cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
         <h4 className="font-semibold text-slate-900 text-base group-hover:text-blue-600 transition-colors">{job.title}</h4>
         <p className="text-sm text-slate-600 mt-1">{job.company}</p>
+
+        {/* AI Enrichment Badge */}
+        <JobEnrichmentBadge job={{ ...job, extracted_description: enriched }} />
+
+        {/* Enrich Button (only show if not already enriched) */}
+        {!enriched && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEnrich();
+            }}
+            disabled={enriching}
+            className="mt-2 px-3 py-1 bg-gradient-to-r from-purple-500 to-blue-500 text-white text-xs font-semibold rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {enriching ? '✨ Analyzing...' : '✨ Enrich with AI'}
+          </button>
+        )}
+
         {job.url && (
           <a
             href={job.url}

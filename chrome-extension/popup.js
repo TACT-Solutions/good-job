@@ -184,10 +184,55 @@ function setupJobForm() {
         throw new Error(error.message);
       }
 
-      showMessage(messageDiv, '✓ Job saved successfully!', 'success');
+      const jobId = data[0].id;
+
+      // Show initial success
+      showMessage(messageDiv, '✓ Job saved!', 'success');
       loadStats(); // Refresh stats
 
-      setTimeout(() => window.close(), 1500);
+      // AI Enrichment (non-blocking)
+      messageDiv.innerHTML = '<div class="ai-loading">✨ Analyzing with AI...</div>';
+
+      try {
+        const API_URL = 'https://good-job.app';
+
+        const enrichResponse = await fetch(`${API_URL}/api/ai/enrich-on-save`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify({ jobId })
+        });
+
+        const enrichData = await enrichResponse.json();
+
+        if (enrichData.success && enrichData.insights) {
+          const { seniority, remote, topSkills, summary } = enrichData.insights;
+
+          messageDiv.innerHTML = `
+            <div class="ai-success">
+              <div class="ai-success-title">✓ Job analyzed and saved!</div>
+              <div class="ai-badges">
+                ${seniority !== 'unknown' ? `<span class="badge">${seniority}</span>` : ''}
+                ${remote !== 'unknown' ? `<span class="badge">${remote}</span>` : ''}
+                ${topSkills.map(skill => `<span class="badge">${skill}</span>`).join('')}
+              </div>
+              ${summary ? `<div class="ai-summary">${summary.substring(0, 100)}...</div>` : ''}
+            </div>
+          `;
+        } else {
+          // Fallback if AI fails
+          messageDiv.innerHTML = '<div class="message success">✓ Job saved successfully!</div>';
+        }
+      } catch (aiError) {
+        // Show transparent warning - job is already saved
+        console.error('AI enrichment failed:', aiError);
+        messageDiv.innerHTML = '<div class="message warning">✓ Job saved! (AI analysis unavailable)</div>';
+      }
+
+      // Auto-close after 3 seconds
+      setTimeout(() => window.close(), 3000);
 
     } catch (error) {
       console.error('Error saving job:', error);
