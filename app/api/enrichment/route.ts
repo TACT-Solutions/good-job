@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
     if (contactIntelligence.hiringManager.name) {
       const primaryEmail = contactIntelligence.hiringManager.emails.find(e => e.confidence === 'confirmed' || e.confidence === 'high');
 
-      await supabase.from('contacts').upsert({
+      const contactData = {
         user_id: user.id,
         job_id: jobId,
         name: contactIntelligence.hiringManager.name,
@@ -140,29 +140,48 @@ export async function POST(request: NextRequest) {
         email: primaryEmail?.email || null,
         source: contactIntelligence.hiringManager.linkedin || 'AI Discovery',
         notes: `${contactIntelligence.hiringManager.reasoning}\n\nEmail suggestions:\n${contactIntelligence.hiringManager.emails.map(e => `- ${e.email} (${e.confidence} confidence)`).join('\n')}`,
-      }, {
-        onConflict: 'user_id,job_id,email',
+      };
+
+      const { error: hmError } = await supabase.from('contacts').upsert(contactData, {
+        onConflict: primaryEmail?.email ? 'user_id,job_id,email' : 'user_id,job_id,name',
         ignoreDuplicates: false,
       });
+
+      if (hmError) {
+        console.error('[Enrichment] Failed to save hiring manager:', hmError);
+      } else {
+        console.log('[Enrichment] Saved hiring manager:', contactIntelligence.hiringManager.name);
+      }
     }
 
     // Save other team contacts
+    let savedCount = 0;
     for (const contact of contactIntelligence.teamContacts.slice(0, 5)) { // Limit to top 5
       if (contact.email || contact.name) {
-        await supabase.from('contacts').upsert({
+        const contactData = {
           user_id: user.id,
           job_id: jobId,
           name: contact.name,
           title: contact.title,
-          email: contact.email,
-          source: contact.source,
+          email: contact.email || null,
+          source: contact.source || 'AI Discovery',
           notes: contact.linkedin ? `LinkedIn: ${contact.linkedin}` : null,
-        }, {
-          onConflict: 'user_id,job_id,email',
+        };
+
+        const { error: contactError } = await supabase.from('contacts').upsert(contactData, {
+          onConflict: contact.email ? 'user_id,job_id,email' : 'user_id,job_id,name',
           ignoreDuplicates: true,
         });
+
+        if (contactError) {
+          console.error('[Enrichment] Failed to save contact:', contact.name, contactError);
+        } else {
+          savedCount++;
+        }
       }
     }
+
+    console.log('[Enrichment] Saved', savedCount, 'team contacts');
 
     console.log('[Enrichment] Successfully enriched job with actionable data and saved contacts');
     return NextResponse.json({ success: true, data: extractedData });
