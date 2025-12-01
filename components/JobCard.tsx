@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import JobEnrichmentBadge from './JobEnrichmentBadge';
+import Link from 'next/link';
 
 type Job = {
   id: string;
@@ -80,8 +81,12 @@ export default function JobCard({ job }: { job: Job }) {
 
   return (
     <div className="group bg-white border border-slate-200 rounded-xl p-5 hover:shadow-soft hover:border-blue-200 transition-all duration-300">
-      <div className="cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
-        <h4 className="font-semibold text-slate-900 text-base group-hover:text-blue-600 transition-colors">{job.title}</h4>
+      <div>
+        <Link href={`/dashboard/jobs/${job.id}`} className="block">
+          <h4 className="font-semibold text-slate-900 text-base group-hover:text-blue-600 transition-colors hover:underline">
+            {job.title}
+          </h4>
+        </Link>
         <p className="text-sm text-slate-600 mt-1">{job.company}</p>
 
         {/* AI Enrichment Badge */}
@@ -107,7 +112,6 @@ export default function JobCard({ job }: { job: Job }) {
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 hover:underline mt-2 font-medium"
-            onClick={(e) => e.stopPropagation()}
           >
             View posting
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -115,6 +119,14 @@ export default function JobCard({ job }: { job: Job }) {
             </svg>
           </a>
         )}
+
+        {/* Expand/Collapse Toggle */}
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="mt-3 text-xs text-slate-500 hover:text-slate-700 font-medium block"
+        >
+          {isExpanded ? '▲ Show less' : '▼ Show more'}
+        </button>
       </div>
 
       {isExpanded && (
