@@ -107,14 +107,16 @@ export default function JobDetailView({
         body: JSON.stringify({
           jobId: job.id,
           description: job.raw_description,
-          company: job.company
+          company: job.company,
+          title: job.title
         })
       });
       const data = await response.json();
       if (data.success) {
         router.refresh();
       } else {
-        alert('AI enrichment failed. Please try again.');
+        console.error('Enrichment API error:', data);
+        alert(`AI enrichment failed: ${data.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Enrichment failed:', error);
