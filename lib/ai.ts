@@ -38,7 +38,10 @@ export async function enrichJobDescription(jobDescription: string) {
 
     if (!result) throw new Error('No response from AI');
 
-    const parsed = JSON.parse(result);
+    // Strip markdown code blocks if present (```json ... ```)
+    const cleanedResult = result.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+    const parsed = JSON.parse(cleanedResult);
     console.log('[AI] Successfully parsed JSON response');
     return parsed;
   } catch (error) {
@@ -119,7 +122,10 @@ export async function extractCompanyInfo(companyName: string, jobDescription: st
 
     if (!result) throw new Error('No response');
 
-    const parsed = JSON.parse(result);
+    // Strip markdown code blocks if present (```json ... ```)
+    const cleanedResult = result.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+    const parsed = JSON.parse(cleanedResult);
     console.log('[AI] Successfully parsed company info JSON');
     return parsed;
   } catch (error) {
