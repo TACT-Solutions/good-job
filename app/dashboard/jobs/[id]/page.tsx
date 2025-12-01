@@ -2,8 +2,13 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import JobDetailView from '@/components/JobDetailView';
 
-export default async function JobDetailPage({ params }: { params: { id: string } }) {
+export default async function JobDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const supabase = await createClient();
+  const { id } = await params;
 
   // Get authenticated user
   const {
@@ -18,7 +23,7 @@ export default async function JobDetailPage({ params }: { params: { id: string }
   const { data: job, error } = await supabase
     .from('jobs')
     .select('*')
-    .eq('id', params.id)
+    .eq('id', id)
     .eq('user_id', user.id)
     .single();
 
@@ -30,14 +35,14 @@ export default async function JobDetailPage({ params }: { params: { id: string }
   const { data: contacts } = await supabase
     .from('contacts')
     .select('*')
-    .eq('job_id', params.id)
+    .eq('job_id', id)
     .eq('user_id', user.id);
 
   // Fetch related reminders
   const { data: reminders } = await supabase
     .from('reminders')
     .select('*')
-    .eq('job_id', params.id)
+    .eq('job_id', id)
     .eq('user_id', user.id)
     .order('date', { ascending: true });
 
