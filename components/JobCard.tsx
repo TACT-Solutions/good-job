@@ -61,7 +61,8 @@ export default function JobCard({ job }: { job: Job }) {
         body: JSON.stringify({
           jobId: job.id,
           description: job.raw_description || '',
-          company: job.company
+          company: job.company,
+          title: job.title
         })
       });
       const data = await response.json();
@@ -69,7 +70,8 @@ export default function JobCard({ job }: { job: Job }) {
         setEnriched(JSON.stringify(data.data));
         router.refresh();
       } else {
-        alert('AI enrichment failed. Please try again.');
+        console.error('Enrichment API error:', data);
+        alert(`AI enrichment failed: ${data.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Enrichment failed:', error);
