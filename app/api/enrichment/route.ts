@@ -65,7 +65,15 @@ export async function POST(request: NextRequest) {
         company,
         jobTitle,
         companyInfo.department || 'Unknown',
-        companyData.websiteUrl ? new URL(companyData.websiteUrl).hostname : null
+        companyData.websiteUrl ? (
+          (() => {
+            try {
+              return new URL(companyData.websiteUrl).hostname;
+            } catch {
+              return null;
+            }
+          })()
+        ) : null
       ),
     ]);
 
