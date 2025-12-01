@@ -20,20 +20,63 @@ function extractJobInfo() {
   // LinkedIn Jobs
   if (url.includes('linkedin.com/jobs')) {
     source = 'LinkedIn';
-    title = document.querySelector('.job-details-jobs-unified-top-card__job-title, .jobs-unified-top-card__job-title')?.textContent?.trim() || '';
-    company = document.querySelector('.job-details-jobs-unified-top-card__company-name, .jobs-unified-top-card__company-name a')?.textContent?.trim() || '';
-    location = document.querySelector('.job-details-jobs-unified-top-card__bullet, .jobs-unified-top-card__bullet')?.textContent?.trim() || '';
 
-    // LinkedIn salary
-    const salaryElement = document.querySelector('.job-details-jobs-unified-top-card__job-insight, .jobs-unified-top-card__job-insight');
-    if (salaryElement && salaryElement.textContent.includes('$')) {
-      salary = salaryElement.textContent.trim();
+    // Title - multiple selectors
+    title = trySelectors([
+      '.job-details-jobs-unified-top-card__job-title',
+      '.jobs-unified-top-card__job-title',
+      '.t-24.t-bold'
+    ]);
+
+    // Company - multiple selectors
+    company = trySelectors([
+      '.job-details-jobs-unified-top-card__company-name',
+      '.jobs-unified-top-card__company-name a',
+      '.jobs-unified-top-card__company-name',
+      '.app-aware-link'
+    ]);
+
+    // Location - multiple selectors
+    location = trySelectors([
+      '.job-details-jobs-unified-top-card__bullet',
+      '.jobs-unified-top-card__bullet',
+      '.jobs-unified-top-card__workplace-type'
+    ]);
+
+    // Description - multiple selectors
+    description = trySelectors([
+      '.jobs-description__content',
+      '.jobs-box__html-content',
+      '.jobs-description'
+    ]);
+
+    // Salary - multiple approaches
+    // Try direct selectors first
+    const salarySelectors = [
+      '.job-details-jobs-unified-top-card__job-insight',
+      '.jobs-unified-top-card__job-insight',
+      '.job-details-jobs-unified-top-card__job-insight--highlight',
+      '.salary-main-rail__salary-info'
+    ];
+
+    for (const selector of salarySelectors) {
+      const elements = document.querySelectorAll(selector);
+      for (const el of elements) {
+        const text = el.textContent?.trim() || '';
+        if (text.includes('$') || text.includes('€') || text.includes('£') || text.toLowerCase().includes('salary')) {
+          salary = text;
+          break;
+        }
+      }
+      if (salary) break;
     }
 
-    // Description
-    description = document.querySelector('.jobs-description__content, .jobs-box__html-content')?.textContent?.trim() || '';
+    // If no salary found, parse from description
+    if (!salary && description) {
+      salary = extractSalaryFromText(description);
+    }
 
-    // Job type detection from description or badges
+    // Job type detection
     const fullText = (title + ' ' + description + ' ' + location).toLowerCase();
     jobType = detectJobType(fullText);
   }
@@ -41,11 +84,43 @@ function extractJobInfo() {
   // Indeed
   else if (url.includes('indeed.com')) {
     source = 'Indeed';
-    title = document.querySelector('[data-testid="jobsearch-JobInfoHeader-title"], .jobsearch-JobInfoHeader-title')?.textContent?.trim() || '';
-    company = document.querySelector('[data-testid="inlineHeader-companyName"], .jobsearch-InlineCompanyRating-companyHeader')?.textContent?.trim() || '';
-    location = document.querySelector('[data-testid="job-location"], .jobsearch-JobInfoHeader-subtitle [data-testid="text-location"]')?.textContent?.trim() || '';
-    salary = document.querySelector('[data-testid="jobsearch-JobMetadataHeader-item"], .jobsearch-JobMetadataHeader-item')?.textContent?.trim() || '';
-    description = document.querySelector('#jobDescriptionText, .jobsearch-JobComponent-description')?.textContent?.trim() || '';
+
+    title = trySelectors([
+      '[data-testid="jobsearch-JobInfoHeader-title"]',
+      '.jobsearch-JobInfoHeader-title',
+      'h1.icl-u-xs-mb--xs'
+    ]);
+
+    company = trySelectors([
+      '[data-testid="inlineHeader-companyName"]',
+      '.jobsearch-InlineCompanyRating-companyHeader',
+      '[data-company-name="true"]'
+    ]);
+
+    location = trySelectors([
+      '[data-testid="job-location"]',
+      '.jobsearch-JobInfoHeader-subtitle [data-testid="text-location"]',
+      '.jobsearch-JobInfoHeader-subtitle'
+    ]);
+
+    description = trySelectors([
+      '#jobDescriptionText',
+      '.jobsearch-JobComponent-description',
+      '.jobsearch-jobDescriptionText'
+    ]);
+
+    // Salary - multiple selectors
+    salary = trySelectors([
+      '[data-testid="jobsearch-JobMetadataHeader-item"]',
+      '.jobsearch-JobMetadataHeader-item',
+      '.metadata.salary-snippet-container',
+      '.salaryInfoAndJobContainer'
+    ]);
+
+    // Fallback to description parsing
+    if (!salary && description) {
+      salary = extractSalaryFromText(description);
+    }
 
     // Posted date
     const footerItems = document.querySelectorAll('.jobsearch-JobMetadataFooter, [data-testid="job-metadata"]');
@@ -63,11 +138,40 @@ function extractJobInfo() {
   // Glassdoor
   else if (url.includes('glassdoor.com')) {
     source = 'Glassdoor';
-    title = document.querySelector('[data-test="job-title"], .JobDetails_jobTitle__Rw_gn')?.textContent?.trim() || '';
-    company = document.querySelector('[data-test="employer-name"], .EmployerProfile_employerName__Xemli')?.textContent?.trim() || '';
-    location = document.querySelector('[data-test="location"], .JobDetails_location__mSg5h')?.textContent?.trim() || '';
-    salary = document.querySelector('[data-test="detailSalary"], .JobDetails_salary__6y4Sn')?.textContent?.trim() || '';
-    description = document.querySelector('[data-test="jobDescriptionText"], .JobDetails_jobDescription__uW_fK')?.textContent?.trim() || '';
+
+    title = trySelectors([
+      '[data-test="job-title"]',
+      '.JobDetails_jobTitle__Rw_gn',
+      'h1[class*="jobTitle"]'
+    ]);
+
+    company = trySelectors([
+      '[data-test="employer-name"]',
+      '.EmployerProfile_employerName__Xemli',
+      '[data-test="employerName"]'
+    ]);
+
+    location = trySelectors([
+      '[data-test="location"]',
+      '.JobDetails_location__mSg5h',
+      '[data-test="emp-location"]'
+    ]);
+
+    description = trySelectors([
+      '[data-test="jobDescriptionText"]',
+      '.JobDetails_jobDescription__uW_fK',
+      '[class*="jobDescription"]'
+    ]);
+
+    salary = trySelectors([
+      '[data-test="detailSalary"]',
+      '.JobDetails_salary__6y4Sn',
+      '[data-test="payPeriod"]'
+    ]);
+
+    if (!salary && description) {
+      salary = extractSalaryFromText(description);
+    }
 
     const fullText = (title + ' ' + description + ' ' + location).toLowerCase();
     jobType = detectJobType(fullText);
@@ -76,11 +180,40 @@ function extractJobInfo() {
   // ZipRecruiter
   else if (url.includes('ziprecruiter.com')) {
     source = 'ZipRecruiter';
-    title = document.querySelector('h1.job_title, [data-testid="jobTitle"]')?.textContent?.trim() || '';
-    company = document.querySelector('.hiring_company_text, [data-testid="companyName"]')?.textContent?.trim() || '';
-    location = document.querySelector('.location, [data-testid="jobLocation"]')?.textContent?.trim() || '';
-    salary = document.querySelector('.compensation, [data-testid="compensation"]')?.textContent?.trim() || '';
-    description = document.querySelector('.job_description, [data-testid="jobDescription"]')?.textContent?.trim() || '';
+
+    title = trySelectors([
+      'h1.job_title',
+      '[data-testid="jobTitle"]',
+      'h1[class*="title"]'
+    ]);
+
+    company = trySelectors([
+      '.hiring_company_text',
+      '[data-testid="companyName"]',
+      'a[class*="company"]'
+    ]);
+
+    location = trySelectors([
+      '.location',
+      '[data-testid="jobLocation"]',
+      '[class*="location"]'
+    ]);
+
+    description = trySelectors([
+      '.job_description',
+      '[data-testid="jobDescription"]',
+      '[class*="description"]'
+    ]);
+
+    salary = trySelectors([
+      '.compensation',
+      '[data-testid="compensation"]',
+      '[class*="salary"]'
+    ]);
+
+    if (!salary && description) {
+      salary = extractSalaryFromText(description);
+    }
 
     const fullText = (title + ' ' + description + ' ' + location).toLowerCase();
     jobType = detectJobType(fullText);
@@ -89,11 +222,35 @@ function extractJobInfo() {
   // Monster
   else if (url.includes('monster.com')) {
     source = 'Monster';
-    title = document.querySelector('h1[data-test-id="svx-job-title"]')?.textContent?.trim() || '';
-    company = document.querySelector('[data-test-id="svx-job-header-company-name"]')?.textContent?.trim() || '';
-    location = document.querySelector('[data-test-id="svx-job-header-location"]')?.textContent?.trim() || '';
-    salary = document.querySelector('[data-test-id="svx-job-header-salary"]')?.textContent?.trim() || '';
-    description = document.querySelector('[data-test-id="svx-job-description-text"]')?.textContent?.trim() || '';
+
+    title = trySelectors([
+      'h1[data-test-id="svx-job-title"]',
+      'h1[class*="title"]'
+    ]);
+
+    company = trySelectors([
+      '[data-test-id="svx-job-header-company-name"]',
+      '[class*="company"]'
+    ]);
+
+    location = trySelectors([
+      '[data-test-id="svx-job-header-location"]',
+      '[class*="location"]'
+    ]);
+
+    description = trySelectors([
+      '[data-test-id="svx-job-description-text"]',
+      '[class*="description"]'
+    ]);
+
+    salary = trySelectors([
+      '[data-test-id="svx-job-header-salary"]',
+      '[class*="salary"]'
+    ]);
+
+    if (!salary && description) {
+      salary = extractSalaryFromText(description);
+    }
 
     const fullText = (title + ' ' + description + ' ' + location).toLowerCase();
     jobType = detectJobType(fullText);
@@ -102,10 +259,34 @@ function extractJobInfo() {
   // Greenhouse
   else if (url.includes('greenhouse.io') || url.includes('boards.greenhouse.io')) {
     source = 'Greenhouse';
-    title = document.querySelector('.app-title, h1.app-title')?.textContent?.trim() || '';
-    company = document.querySelector('.company-name')?.textContent?.trim() || '';
-    location = document.querySelector('.location')?.textContent?.trim() || '';
-    description = document.querySelector('#content, .body')?.textContent?.trim() || '';
+
+    title = trySelectors([
+      '.app-title',
+      'h1.app-title',
+      'h1[class*="title"]'
+    ]);
+
+    company = trySelectors([
+      '.company-name',
+      '[class*="company"]'
+    ]);
+
+    location = trySelectors([
+      '.location',
+      '[class*="location"]'
+    ]);
+
+    description = trySelectors([
+      '#content',
+      '.body',
+      '[class*="description"]'
+    ]);
+
+    // Greenhouse rarely shows salary upfront, parse from description
+    if (description) {
+      salary = extractSalaryFromText(description);
+      location = location || extractLocationFromText(description);
+    }
 
     const fullText = (title + ' ' + description + ' ' + location).toLowerCase();
     jobType = detectJobType(fullText);
@@ -114,13 +295,35 @@ function extractJobInfo() {
   // Lever
   else if (url.includes('lever.co') || url.includes('jobs.lever.co')) {
     source = 'Lever';
-    title = document.querySelector('.posting-headline h2')?.textContent?.trim() || '';
-    company = document.querySelector('.main-header-text a')?.textContent?.trim() || '';
-    location = document.querySelector('.posting-categories .location, .sort-by-time.posting-category')?.textContent?.trim() || '';
-    description = document.querySelector('.posting-description, .content-wrapper')?.textContent?.trim() || '';
 
-    // Lever commitment (full-time, part-time, etc.)
+    title = trySelectors([
+      '.posting-headline h2',
+      'h2[class*="title"]'
+    ]);
+
+    company = trySelectors([
+      '.main-header-text a',
+      '[class*="company"]'
+    ]);
+
+    location = trySelectors([
+      '.posting-categories .location',
+      '.sort-by-time.posting-category',
+      '[class*="location"]'
+    ]);
+
+    description = trySelectors([
+      '.posting-description',
+      '.content-wrapper',
+      '[class*="description"]'
+    ]);
+
     const commitment = document.querySelector('.posting-categories .commitment')?.textContent?.trim() || '';
+
+    // Lever rarely shows salary, parse from description
+    if (description) {
+      salary = extractSalaryFromText(description);
+    }
 
     const fullText = (title + ' ' + description + ' ' + location + ' ' + commitment).toLowerCase();
     jobType = detectJobType(fullText);
@@ -129,31 +332,101 @@ function extractJobInfo() {
   // Remote.co
   else if (url.includes('remote.co')) {
     source = 'Remote.co';
-    title = document.querySelector('.job_title, h2')?.textContent?.trim() || '';
-    company = document.querySelector('.company_name, .company')?.textContent?.trim() || '';
-    location = document.querySelector('.location')?.textContent?.trim() || 'Remote';
-    description = document.querySelector('.job_description, .description')?.textContent?.trim() || '';
+
+    title = trySelectors([
+      '.job_title',
+      'h2',
+      '[class*="title"]'
+    ]);
+
+    company = trySelectors([
+      '.company_name',
+      '.company',
+      '[class*="company"]'
+    ]);
+
+    location = trySelectors([
+      '.location',
+      '[class*="location"]'
+    ]) || 'Remote';
+
+    description = trySelectors([
+      '.job_description',
+      '.description',
+      '[class*="description"]'
+    ]);
+
+    if (description) {
+      salary = extractSalaryFromText(description);
+    }
+
     jobType = 'remote';
   }
 
   // We Work Remotely
   else if (url.includes('weworkremotely.com')) {
     source = 'We Work Remotely';
-    title = document.querySelector('h1.listing-header-container__title')?.textContent?.trim() || '';
-    company = document.querySelector('.listing-header-container__company')?.textContent?.trim() || '';
-    location = document.querySelector('.listing-header-container__location')?.textContent?.trim() || 'Remote';
-    description = document.querySelector('.listing-container__description')?.textContent?.trim() || '';
+
+    title = trySelectors([
+      'h1.listing-header-container__title',
+      'h1[class*="title"]'
+    ]);
+
+    company = trySelectors([
+      '.listing-header-container__company',
+      '[class*="company"]'
+    ]);
+
+    location = trySelectors([
+      '.listing-header-container__location',
+      '[class*="location"]'
+    ]) || 'Remote';
+
+    description = trySelectors([
+      '.listing-container__description',
+      '[class*="description"]'
+    ]);
+
+    if (description) {
+      salary = extractSalaryFromText(description);
+    }
+
     jobType = 'remote';
   }
 
   // AngelList / Wellfound
   else if (url.includes('angel.co') || url.includes('wellfound.com')) {
     source = 'Wellfound';
-    title = document.querySelector('h1[data-test="JobTitle"]')?.textContent?.trim() || '';
-    company = document.querySelector('[data-test="StartupNameLink"]')?.textContent?.trim() || '';
-    location = document.querySelector('[data-test="JobLocation"]')?.textContent?.trim() || '';
-    salary = document.querySelector('[data-test="SalaryRange"]')?.textContent?.trim() || '';
-    description = document.querySelector('[data-test="JobDescription"]')?.textContent?.trim() || '';
+
+    title = trySelectors([
+      'h1[data-test="JobTitle"]',
+      'h1[class*="title"]'
+    ]);
+
+    company = trySelectors([
+      '[data-test="StartupNameLink"]',
+      '[class*="company"]'
+    ]);
+
+    location = trySelectors([
+      '[data-test="JobLocation"]',
+      '[class*="location"]'
+    ]);
+
+    description = trySelectors([
+      '[data-test="JobDescription"]',
+      '[class*="description"]'
+    ]);
+
+    salary = trySelectors([
+      '[data-test="SalaryRange"]',
+      '[class*="salary"]',
+      '[class*="compensation"]'
+    ]);
+
+    if (!salary && description) {
+      salary = extractSalaryFromText(description);
+    }
 
     const fullText = (title + ' ' + description + ' ' + location).toLowerCase();
     jobType = detectJobType(fullText);
@@ -162,11 +435,40 @@ function extractJobInfo() {
   // Dice (tech jobs)
   else if (url.includes('dice.com')) {
     source = 'Dice';
-    title = document.querySelector('h1.jobTitle, [data-cy="jobTitle"]')?.textContent?.trim() || '';
-    company = document.querySelector('.employer, [data-cy="companyName"]')?.textContent?.trim() || '';
-    location = document.querySelector('.location, [data-cy="location"]')?.textContent?.trim() || '';
-    salary = document.querySelector('.compensation, [data-cy="compensation"]')?.textContent?.trim() || '';
-    description = document.querySelector('.description, [data-cy="jobDescription"]')?.textContent?.trim() || '';
+
+    title = trySelectors([
+      'h1.jobTitle',
+      '[data-cy="jobTitle"]',
+      'h1[class*="title"]'
+    ]);
+
+    company = trySelectors([
+      '.employer',
+      '[data-cy="companyName"]',
+      '[class*="company"]'
+    ]);
+
+    location = trySelectors([
+      '.location',
+      '[data-cy="location"]',
+      '[class*="location"]'
+    ]);
+
+    description = trySelectors([
+      '.description',
+      '[data-cy="jobDescription"]',
+      '[class*="description"]'
+    ]);
+
+    salary = trySelectors([
+      '.compensation',
+      '[data-cy="compensation"]',
+      '[class*="salary"]'
+    ]);
+
+    if (!salary && description) {
+      salary = extractSalaryFromText(description);
+    }
 
     const fullText = (title + ' ' + description + ' ' + location).toLowerCase();
     jobType = detectJobType(fullText);
@@ -177,52 +479,50 @@ function extractJobInfo() {
     source = extractDomainName(url);
 
     // Try to find title
-    const headings = document.querySelectorAll('h1, h2, [class*="title"], [class*="job"], [class*="position"]');
-    for (const heading of headings) {
-      const text = heading.textContent?.trim();
-      if (text && text.length > 5 && text.length < 150) {
-        title = text;
-        break;
-      }
-    }
+    title = trySelectors([
+      'h1',
+      'h2',
+      '[class*="title"]',
+      '[class*="job"]',
+      '[class*="position"]'
+    ], 5, 150);
 
     // Try to find company
-    const companyElements = document.querySelectorAll('[class*="company"], [class*="employer"], [class*="organization"]');
-    for (const el of companyElements) {
-      const text = el.textContent?.trim();
-      if (text && text.length > 2 && text.length < 100) {
-        company = text;
-        break;
-      }
-    }
+    company = trySelectors([
+      '[class*="company"]',
+      '[class*="employer"]',
+      '[class*="organization"]'
+    ], 2, 100);
 
     // Try to find location
-    const locationElements = document.querySelectorAll('[class*="location"], [class*="city"], [class*="remote"]');
-    for (const el of locationElements) {
-      const text = el.textContent?.trim();
-      if (text && text.length > 2 && text.length < 100) {
-        location = text;
-        break;
-      }
-    }
+    location = trySelectors([
+      '[class*="location"]',
+      '[class*="city"]',
+      '[class*="remote"]'
+    ], 2, 100);
 
     // Try to find salary
-    const salaryElements = document.querySelectorAll('[class*="salary"], [class*="compensation"], [class*="pay"]');
-    for (const el of salaryElements) {
-      const text = el.textContent?.trim();
-      if (text && (text.includes('$') || text.includes('k') || text.includes('year'))) {
-        salary = text;
-        break;
-      }
-    }
+    salary = trySelectors([
+      '[class*="salary"]',
+      '[class*="compensation"]',
+      '[class*="pay"]'
+    ], 0, 200);
 
-    // Get description (limited to avoid too much text)
+    // Get description
     const descriptionElements = document.querySelectorAll('[class*="description"], [class*="detail"], [id*="description"]');
     if (descriptionElements.length > 0) {
       description = descriptionElements[0].textContent?.trim().substring(0, 2000) || '';
     } else {
       const bodyText = document.body.textContent?.trim();
       description = bodyText ? bodyText.substring(0, 1000) : '';
+    }
+
+    // Parse missing fields from description
+    if (!salary && description) {
+      salary = extractSalaryFromText(description);
+    }
+    if (!location && description) {
+      location = extractLocationFromText(description);
     }
 
     const fullText = (title + ' ' + description + ' ' + location).toLowerCase();
@@ -246,6 +546,78 @@ function extractJobInfo() {
     postedDate,
     source
   };
+}
+
+// Helper function to try multiple selectors
+function trySelectors(selectors, minLength = 0, maxLength = 1000) {
+  for (const selector of selectors) {
+    const elements = document.querySelectorAll(selector);
+    for (const el of elements) {
+      const text = el.textContent?.trim();
+      if (text && text.length > minLength && text.length < maxLength) {
+        return text;
+      }
+    }
+  }
+  return '';
+}
+
+// Extract salary from text using regex patterns
+function extractSalaryFromText(text) {
+  if (!text) return '';
+
+  // Patterns to match various salary formats
+  const patterns = [
+    // $120k - $180k, $120K-$180K
+    /\$\s*(\d{1,3})\s*[kK]\s*[-–—]\s*\$?\s*(\d{1,3})\s*[kK]/,
+    // $120,000 - $180,000
+    /\$\s*(\d{1,3}),(\d{3})\s*[-–—]\s*\$?\s*(\d{1,3}),(\d{3})/,
+    // $120000-$180000
+    /\$\s*(\d{5,7})\s*[-–—]\s*\$?\s*(\d{5,7})/,
+    // $120k/year, $120K per year
+    /\$\s*(\d{1,3})\s*[kK]\s*(?:\/|\bper\b)?\s*(?:year|yr|annually)?/i,
+    // €80k - €120k (European)
+    /€\s*(\d{1,3})\s*[kK]\s*[-–—]\s*€?\s*(\d{1,3})\s*[kK]/,
+    // £60k - £90k (UK)
+    /£\s*(\d{1,3})\s*[kK]\s*[-–—]\s*£?\s*(\d{1,3})\s*[kK]/,
+    // Salary: $120,000
+    /(?:salary|compensation|pay)[\s:]+\$\s*(\d{1,3}),?(\d{3})/i,
+    // Up to $180k
+    /(?:up to|upto)\s+\$\s*(\d{1,3})\s*[kK]/i,
+  ];
+
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match) {
+      return match[0].trim();
+    }
+  }
+
+  return '';
+}
+
+// Extract location from text
+function extractLocationFromText(text) {
+  if (!text) return '';
+
+  // Patterns to match location
+  const patterns = [
+    // "Location: New York, NY"
+    /(?:location|based in|office)[\s:]+([A-Z][a-zA-Z\s]+,\s*[A-Z]{2})/i,
+    // City, State format
+    /\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*,\s*[A-Z]{2})\b/,
+    // Remote keywords
+    /\b(remote|work from home|anywhere|distributed)\b/i,
+  ];
+
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match) {
+      return match[1]?.trim() || match[0].trim();
+    }
+  }
+
+  return '';
 }
 
 // Detect job type from text content
