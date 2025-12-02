@@ -51,6 +51,11 @@ export async function POST(request: NextRequest) {
 
     console.log('[Enrichment] Starting enhanced enrichment for:', company);
 
+    // Extract emails from job description
+    const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
+    const emailsInDescription = description.match(emailRegex) || [];
+    console.log('[Enrichment] Found emails in description:', emailsInDescription);
+
     // Run all enrichment tasks in parallel for speed
     const [jobInfo, companyInfo, companyData] = await Promise.all([
       enrichJobDescription(description),
@@ -200,6 +205,30 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('[Enrichment] Saved', savedCount, 'team contacts');
+
+    // Save emails found in job description
+    let emailCount = 0;
+    for (const email of emailsInDescription) {
+      const { error: emailError } = await supabase.from('contacts').upsert({
+        user_id: user.id,
+        job_id: jobId,
+        name: `Contact (${email.split('@')[0]})`,
+        email: email,
+        source: 'Job Posting',
+        notes: 'Email found in job description',
+      }, {
+        onConflict: 'user_id,job_id,email',
+        ignoreDuplicates: true,
+      });
+
+      if (!emailError) {
+        emailCount++;
+      }
+    }
+
+    if (emailCount > 0) {
+      console.log('[Enrichment] Saved', emailCount, 'emails from job description');
+    }
 
     console.log('[Enrichment] Successfully enriched job with actionable data and saved contacts');
     return NextResponse.json({ success: true, data: extractedData });
