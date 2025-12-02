@@ -28,7 +28,7 @@ export async function enrichJobDescription(jobDescription: string) {
           content: `Analyze this job description:\n\n${jobDescription}`,
         },
       ],
-      model: 'llama-3.3-70b-versatile',
+      model: 'llama-3.1-8b-instant', // Fast & cheap for simple extraction
       temperature: 0.3,
       max_tokens: 1000,
     });
@@ -112,7 +112,7 @@ export async function extractCompanyInfo(companyName: string, jobDescription: st
           content: `Company: ${companyName}\n\nJob Description:\n${jobDescription}`,
         },
       ],
-      model: 'llama-3.3-70b-versatile',
+      model: 'llama-3.1-8b-instant', // Fast & cheap for simple company info
       temperature: 0.2,
       max_tokens: 300,
     });

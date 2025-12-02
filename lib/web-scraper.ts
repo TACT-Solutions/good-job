@@ -44,7 +44,7 @@ export async function scrapeCompanyWebsite(companyName: string): Promise<{
           content: `Research this company: ${companyName}`,
         },
       ],
-      model: 'llama-3.3-70b-versatile',
+      model: 'meta-llama/llama-4-scout-17b-16e-instruct', // Best value for research
       temperature: 0.2,
       max_tokens: 1500,
     });
@@ -115,7 +115,7 @@ Company Data:
 Job Description excerpt: ${jobDescription.substring(0, 500)}...`,
         },
       ],
-      model: 'llama-3.3-70b-versatile',
+      model: 'meta-llama/llama-4-maverick-17b-128e-instruct', // Smart reasoning for insights
       temperature: 0.7,
       max_tokens: 1500,
     });
@@ -186,7 +186,7 @@ Department: ${department}
 Job Title: ${jobTitle}`,
         },
       ],
-      model: 'llama-3.3-70b-versatile',
+      model: 'llama-3.1-8b-instant', // Fast for simple contact strategies
       temperature: 0.5,
       max_tokens: 800,
     });

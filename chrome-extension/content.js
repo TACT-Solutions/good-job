@@ -20,12 +20,17 @@ function extractJobInfo() {
   // LinkedIn Jobs
   if (url.includes('linkedin.com/jobs')) {
     source = 'LinkedIn';
+    console.log('[GoodJob] Extracting LinkedIn job data from:', url);
 
     // Title - multiple selectors
     title = trySelectors([
       '.job-details-jobs-unified-top-card__job-title',
       '.jobs-unified-top-card__job-title',
-      '.t-24.t-bold'
+      '.t-24.t-bold',
+      '.job-details-jobs-unified-top-card__job-title h1',
+      '.jobs-unified-top-card__job-title h1',
+      'h1.jobs-unified-top-card__job-title',
+      '[data-anonymize="job-title"]'
     ]);
 
     // Company - multiple selectors
@@ -33,7 +38,11 @@ function extractJobInfo() {
       '.job-details-jobs-unified-top-card__company-name',
       '.jobs-unified-top-card__company-name a',
       '.jobs-unified-top-card__company-name',
-      '.app-aware-link'
+      '.app-aware-link',
+      '.job-details-jobs-unified-top-card__primary-description a',
+      '.jobs-unified-top-card__subtitle-primary-grouping a',
+      '.jobs-company__name',
+      '[data-anonymize="company-name"]'
     ]);
 
     // Location - multiple selectors
@@ -47,7 +56,11 @@ function extractJobInfo() {
     description = trySelectors([
       '.jobs-description__content',
       '.jobs-box__html-content',
-      '.jobs-description'
+      '.jobs-description',
+      '.jobs-description-content__text',
+      '.show-more-less-html__markup',
+      '#job-details',
+      '[data-job-details]'
     ]);
 
     // Salary - multiple approaches
@@ -529,12 +542,31 @@ function extractJobInfo() {
     jobType = detectJobType(fullText);
   }
 
+  // Log raw extracted data before cleanup (for debugging)
+  console.log('[GoodJob] Raw extracted data:', {
+    title: title,
+    company: company,
+    description: description ? description.substring(0, 100) + '...' : '(empty)',
+    location: location,
+    salary: salary,
+    source: source
+  });
+
   // Clean up extracted data
   title = cleanText(title) || document.title;
   company = cleanText(company) || extractDomainName(url);
   location = cleanText(location);
   salary = cleanText(salary);
   description = cleanText(description);
+
+  console.log('[GoodJob] Final cleaned data:', {
+    title: title,
+    company: company,
+    description: description ? description.substring(0, 100) + '...' : '(empty)',
+    location: location,
+    salary: salary,
+    source: source
+  });
 
   return {
     title,

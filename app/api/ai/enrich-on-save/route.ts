@@ -6,6 +6,7 @@ import {
   generateActionableInsights,
   findCompanyContacts,
 } from '@/lib/web-scraper';
+import { getContactIntelligence } from '@/lib/contact-discovery';
 
 export async function POST(request: NextRequest) {
   try {
@@ -39,6 +40,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Job not found' }, { status: 404 });
     }
 
+    // Extract emails from job description
+    const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
+    const emailsInDescription = (job.raw_description || '').match(emailRegex) || [];
+
     // Parallel AI calls with 10-second timeout (increased for additional enrichment)
     const enrichmentPromise = Promise.race([
       Promise.all([
@@ -53,8 +58,8 @@ export async function POST(request: NextRequest) {
 
     const [jobInfo, companyInfo, companyData] = await enrichmentPromise;
 
-    // Generate actionable insights
-    const [actionableInsights, contactStrategies] = await Promise.all([
+    // Generate actionable insights and contact intelligence
+    const [actionableInsights, contactStrategies, contactIntelligence] = await Promise.all([
       generateActionableInsights(
         job.company,
         job.title,
@@ -65,6 +70,20 @@ export async function POST(request: NextRequest) {
         job.company,
         companyInfo.department || 'Unknown',
         job.title
+      ),
+      getContactIntelligence(
+        job.company,
+        job.title,
+        companyInfo.department || 'Unknown',
+        companyData.websiteUrl ? (
+          (() => {
+            try {
+              return new URL(companyData.websiteUrl).hostname;
+            } catch {
+              return null;
+            }
+          })()
+        ) : null
       ),
     ]);
 
@@ -101,6 +120,16 @@ export async function POST(request: NextRequest) {
       suggestedRoles: contactStrategies.suggestedRoles,
       searchStrategies: contactStrategies.searchStrategies,
       linkedInSearchUrl: contactStrategies.linkedInSearchUrl,
+
+      // Contact intelligence
+      hiringManagerName: contactIntelligence.hiringManager.name,
+      hiringManagerTitle: contactIntelligence.hiringManager.title,
+      hiringManagerEmails: contactIntelligence.hiringManager.emails,
+      hiringManagerLinkedIn: contactIntelligence.hiringManager.linkedin,
+      hiringManagerReasoning: contactIntelligence.hiringManager.reasoning,
+      teamContacts: contactIntelligence.teamContacts,
+      emailPatterns: contactIntelligence.emailPatterns,
+      totalContactsFound: contactIntelligence.totalContactsFound,
     };
 
     // Update job with enrichment
@@ -115,6 +144,90 @@ export async function POST(request: NextRequest) {
       .eq('user_id', user.id);
 
     if (updateError) throw updateError;
+
+    // AUTO-SAVE DISCOVERED CONTACTS TO DATABASE
+    console.log('[Auto-Enrichment] Saving discovered contacts...');
+
+    // Save hiring manager if we have a name
+    if (contactIntelligence.hiringManager.name) {
+      const primaryEmail = contactIntelligence.hiringManager.emails.find(e => e.confidence === 'confirmed' || e.confidence === 'high');
+
+      const contactData = {
+        user_id: user.id,
+        job_id: jobId,
+        name: contactIntelligence.hiringManager.name,
+        title: contactIntelligence.hiringManager.title,
+        email: primaryEmail?.email || null,
+        source: contactIntelligence.hiringManager.linkedin || 'AI Discovery',
+        notes: `${contactIntelligence.hiringManager.reasoning}\n\nEmail suggestions:\n${contactIntelligence.hiringManager.emails.map(e => `- ${e.email} (${e.confidence} confidence)`).join('\n')}`,
+      };
+
+      const { error: hmError } = await supabase.from('contacts').upsert(contactData, {
+        onConflict: primaryEmail?.email ? 'user_id,job_id,email' : 'user_id,job_id,name',
+        ignoreDuplicates: false,
+      });
+
+      if (hmError) {
+        console.error('[Auto-Enrichment] Failed to save hiring manager:', hmError);
+      } else {
+        console.log('[Auto-Enrichment] Saved hiring manager:', contactIntelligence.hiringManager.name);
+      }
+    }
+
+    // Save other team contacts
+    let savedCount = 0;
+    for (const contact of contactIntelligence.teamContacts.slice(0, 5)) { // Limit to top 5
+      if (contact.email || contact.name) {
+        const contactData = {
+          user_id: user.id,
+          job_id: jobId,
+          name: contact.name,
+          title: contact.title,
+          email: contact.email || null,
+          source: contact.source || 'AI Discovery',
+          notes: contact.linkedin ? `LinkedIn: ${contact.linkedin}` : null,
+        };
+
+        const { error: contactError } = await supabase.from('contacts').upsert(contactData, {
+          onConflict: contact.email ? 'user_id,job_id,email' : 'user_id,job_id,name',
+          ignoreDuplicates: true,
+        });
+
+        if (contactError) {
+          console.error('[Auto-Enrichment] Failed to save contact:', contact.name, contactError);
+        } else {
+          savedCount++;
+        }
+      }
+    }
+
+    console.log('[Auto-Enrichment] Saved', savedCount, 'team contacts');
+
+    // Save emails found in job description
+    let emailCount = 0;
+    for (const email of emailsInDescription) {
+      const { error: emailError } = await supabase.from('contacts').upsert({
+        user_id: user.id,
+        job_id: jobId,
+        name: `Contact (${email.split('@')[0]})`,
+        email: email,
+        source: 'Job Posting',
+        notes: 'Email found in job description',
+      }, {
+        onConflict: 'user_id,job_id,email',
+        ignoreDuplicates: true,
+      });
+
+      if (!emailError) {
+        emailCount++;
+      }
+    }
+
+    if (emailCount > 0) {
+      console.log('[Auto-Enrichment] Saved', emailCount, 'emails from job description');
+    }
+
+    console.log('[Auto-Enrichment] Successfully enriched job with actionable data and saved contacts');
 
     // Return insights for popup display
     return NextResponse.json({

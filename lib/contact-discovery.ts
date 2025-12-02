@@ -69,7 +69,7 @@ Looking for roles: ${targetRoles.join(', ')}
 Find publicly known contacts and detect email patterns.`,
         },
       ],
-      model: 'llama-3.3-70b-versatile',
+      model: 'meta-llama/llama-4-scout-17b-16e-instruct', // Best value for contact research
       temperature: 0.2,
       max_tokens: 2000,
     });
@@ -148,7 +148,7 @@ ${emailPatterns.length > 0
 Generate the most likely email addresses for this person.`,
         },
       ],
-      model: 'llama-3.3-70b-versatile',
+      model: 'meta-llama/llama-4-maverick-17b-128e-instruct', // Smart reasoning for email patterns
       temperature: 0.3,
       max_tokens: 1000,
     });
@@ -236,7 +236,7 @@ Department: ${department}
 Who is most likely the hiring manager for this role?`,
         },
       ],
-      model: 'llama-3.3-70b-versatile',
+      model: 'meta-llama/llama-4-maverick-17b-128e-instruct', // Critical accuracy for hiring manager
       temperature: 0.2,
       max_tokens: 1000,
     });
