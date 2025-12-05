@@ -197,6 +197,18 @@ Job Title: ${jobTitle}`,
     const cleanedResult = result.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     const contacts = JSON.parse(cleanedResult);
 
+    // Normalize searchStrategies - sometimes AI returns objects instead of strings
+    if (contacts.searchStrategies && Array.isArray(contacts.searchStrategies)) {
+      contacts.searchStrategies = contacts.searchStrategies.map((item: any) => {
+        // If it's an object with a 'strategy' field, extract the string
+        if (typeof item === 'object' && item.strategy) {
+          return item.strategy;
+        }
+        // If it's already a string, return as-is
+        return typeof item === 'string' ? item : String(item);
+      });
+    }
+
     console.log('[Scraper] Successfully generated contact strategies');
     return contacts;
   } catch (error) {
