@@ -1,12 +1,17 @@
 /**
  * Web scraper for company research
- * Fetches real data from company websites to make enrichment actionable
+ * Uses Claude for web-connected research and Groq for other tasks
  */
 
 import Groq from 'groq-sdk';
+import Anthropic from '@anthropic-ai/sdk';
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY || 'dummy-key-for-build',
+});
+
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY || 'dummy-key-for-build',
 });
 
 export async function scrapeCompanyWebsite(companyName: string): Promise<{
@@ -21,45 +26,42 @@ export async function scrapeCompanyWebsite(companyName: string): Promise<{
 }> {
   try {
     console.log('[Scraper] Starting company website research for:', companyName);
+    console.log('[Scraper] Using Claude Haiku for better company knowledge');
 
-    // Use Groq to search for and analyze publicly available company info
-    const completion = await groq.chat.completions.create({
+    // Use Claude Haiku for company research - better knowledge of major companies
+    const message = await anthropic.messages.create({
+      model: 'claude-3-5-haiku-20241022', // Fast, cheap, excellent knowledge
+      max_tokens: 1500,
+      temperature: 0.2,
       messages: [
         {
-          role: 'system',
-          content: `You are a company research assistant with knowledge of major companies and tech firms. For ANY company you research, provide comprehensive information based on what you know. Return JSON with:
-          - websiteUrl: Company website URL (e.g., "https://example.com") - REQUIRED, always provide this
-          - aboutText: 2-3 sentence description of what the company does - REQUIRED, use your knowledge
-          - recentNews: Array of 2-3 recent company developments, achievements, or news from your knowledge cutoff
-          - techStack: Array of technologies/tools the company is known to use (for tech companies)
-          - companyValues: Array of company values or culture highlights
-          - teamSize: Estimated team size (e.g., "50-100", "500+", "10,000+") - REQUIRED, always estimate
-          - foundingYear: Year founded (e.g., "2015") - provide if known
-          - headquarters: HQ location (e.g., "San Francisco, CA") - REQUIRED, provide if known
-
-          For well-known companies (Fortune 500, major tech firms, etc.), you MUST provide detailed information.
-          Do NOT return "unknown" or empty values for major companies.
-          Return ONLY valid JSON.`,
-        },
-        {
           role: 'user',
-          content: `Research company: ${companyName}
+          content: `Research this company: ${companyName}
 
-Provide comprehensive information based on your knowledge. This company should be well-documented if it's a major corporation.`,
+You are a company research assistant. Provide comprehensive information about this company based on your training data. Return ONLY valid JSON with:
+- websiteUrl: Company website URL (e.g., "https://example.com") - REQUIRED
+- aboutText: 2-3 sentence description of what the company does - REQUIRED
+- recentNews: Array of 2-3 recent company developments, achievements, or news from your knowledge
+- techStack: Array of technologies/tools the company is known to use (for tech companies)
+- companyValues: Array of company values or culture highlights
+- teamSize: Estimated team size (e.g., "50-100", "500+", "10,000+", "70,000+") - REQUIRED
+- foundingYear: Year founded (e.g., "1851", "2015") - provide if known
+- headquarters: HQ location (e.g., "Toronto, Canada", "San Francisco, CA") - REQUIRED
+
+For well-known companies (Fortune 500, major corporations, tech firms), you MUST provide detailed, accurate information.
+Do NOT return "unknown" or empty values for major companies like Thomson Reuters, Google, Microsoft, etc.
+Return ONLY the JSON object, no other text.`,
         },
       ],
-      model: 'meta-llama/llama-4-scout-17b-16e-instruct', // Best value for research
-      temperature: 0.2,
-      max_tokens: 1500,
     });
 
-    const result = completion.choices[0]?.message?.content;
-    if (!result) throw new Error('No response from AI');
+    const result = message.content[0].type === 'text' ? message.content[0].text : '';
+    if (!result) throw new Error('No response from Claude');
 
     const cleanedResult = result.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     const data = JSON.parse(cleanedResult);
 
-    console.log('[Scraper] Successfully researched company:', companyName);
+    console.log('[Scraper] Successfully researched company with Claude:', companyName);
     return data;
   } catch (error) {
     console.error('[Scraper] Company research error:', error);
