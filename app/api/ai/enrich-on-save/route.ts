@@ -147,19 +147,21 @@ export async function POST(request: NextRequest) {
 
     // AUTO-SAVE DISCOVERED CONTACTS TO DATABASE
     console.log('[Auto-Enrichment] Saving discovered contacts...');
+    let totalContactsSaved = 0;
 
-    // Save hiring manager if we have a name
-    if (contactIntelligence.hiringManager.name) {
-      const primaryEmail = contactIntelligence.hiringManager.emails.find(e => e.confidence === 'confirmed' || e.confidence === 'high');
+    // Save hiring manager - ALWAYS save if we have a title (even without name)
+    if (contactIntelligence.hiringManager.title) {
+      const primaryEmail = contactIntelligence.hiringManager.emails?.find(e => e.confidence === 'confirmed' || e.confidence === 'high');
+      const hasEmailSuggestions = contactIntelligence.hiringManager.emails?.length > 0;
 
       const contactData = {
         user_id: user.id,
         job_id: jobId,
-        name: contactIntelligence.hiringManager.name,
+        name: contactIntelligence.hiringManager.name || `Hiring Manager (${contactIntelligence.hiringManager.title})`,
         title: contactIntelligence.hiringManager.title,
         email: primaryEmail?.email || null,
-        source: contactIntelligence.hiringManager.linkedin || 'AI Discovery',
-        notes: `${contactIntelligence.hiringManager.reasoning}\n\nEmail suggestions:\n${contactIntelligence.hiringManager.emails.map(e => `- ${e.email} (${e.confidence} confidence)`).join('\n')}`,
+        source: 'AI Discovery',
+        notes: `${contactIntelligence.hiringManager.reasoning || 'Likely hiring manager for this role'}${hasEmailSuggestions ? `\n\nEmail suggestions:\n${contactIntelligence.hiringManager.emails.map(e => `- ${e.email} (${e.confidence} confidence)`).join('\n')}` : ''}`,
       };
 
       const { error: hmError } = await supabase.from('contacts').upsert(contactData, {
@@ -170,13 +172,13 @@ export async function POST(request: NextRequest) {
       if (hmError) {
         console.error('[Auto-Enrichment] Failed to save hiring manager:', hmError);
       } else {
-        console.log('[Auto-Enrichment] Saved hiring manager:', contactIntelligence.hiringManager.name);
+        totalContactsSaved++;
+        console.log('[Auto-Enrichment] Saved hiring manager:', contactIntelligence.hiringManager.name || contactIntelligence.hiringManager.title);
       }
     }
 
     // Save other team contacts
-    let savedCount = 0;
-    for (const contact of contactIntelligence.teamContacts.slice(0, 5)) { // Limit to top 5
+    for (const contact of contactIntelligence.teamContacts?.slice(0, 5) || []) { // Limit to top 5
       if (contact.email || contact.name) {
         const contactData = {
           user_id: user.id,
@@ -196,15 +198,14 @@ export async function POST(request: NextRequest) {
         if (contactError) {
           console.error('[Auto-Enrichment] Failed to save contact:', contact.name, contactError);
         } else {
-          savedCount++;
+          totalContactsSaved++;
         }
       }
     }
 
-    console.log('[Auto-Enrichment] Saved', savedCount, 'team contacts');
+    console.log('[Auto-Enrichment] Saved', totalContactsSaved - 1, 'team contacts'); // -1 for hiring manager
 
     // Save emails found in job description
-    let emailCount = 0;
     for (const email of emailsInDescription) {
       const { error: emailError } = await supabase.from('contacts').upsert({
         user_id: user.id,
@@ -219,17 +220,13 @@ export async function POST(request: NextRequest) {
       });
 
       if (!emailError) {
-        emailCount++;
+        totalContactsSaved++;
       }
     }
 
-    if (emailCount > 0) {
-      console.log('[Auto-Enrichment] Saved', emailCount, 'emails from job description');
-    }
+    console.log(`[Auto-Enrichment] Successfully enriched job and saved ${totalContactsSaved} contacts total`);
 
-    console.log('[Auto-Enrichment] Successfully enriched job with actionable data and saved contacts');
-
-    // Return insights for popup display
+    // Return insights for popup display WITH contact count
     return NextResponse.json({
       success: true,
       insights: {
@@ -237,6 +234,7 @@ export async function POST(request: NextRequest) {
         remote: jobInfo.remote,
         topSkills: jobInfo.skills.slice(0, 3),
         summary: jobInfo.summary,
+        contactsFound: totalContactsSaved, // NEW: Tell user how many contacts were saved
       },
     });
   } catch (error) {
