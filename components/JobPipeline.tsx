@@ -11,6 +11,8 @@ type Job = {
   status: 'saved' | 'applied' | 'interviewing' | 'offer' | 'rejected';
   notes: string | null;
   created_at: string;
+  raw_description?: string | null;
+  extracted_description?: string | null;
 };
 
 const STATUSES = [
