@@ -30,10 +30,10 @@ export async function POST(request: NextRequest) {
 
     const { jobId, description, company, title } = body;
 
-    if (!jobId || !description) {
-      console.error('[Enrichment] Missing required fields:', { jobId: !!jobId, description: !!description });
+    if (!jobId || !company) {
+      console.error('[Enrichment] Missing required fields:', { jobId: !!jobId, company: !!company });
       return NextResponse.json(
-        { error: 'Missing required fields: jobId and description are required' },
+        { error: 'Missing required fields: jobId and company are required' },
         { status: 400 }
       );
     }
@@ -50,27 +50,58 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('[Enrichment] Starting enhanced enrichment for:', company);
+    console.log('[Enrichment] Mode:', description ? 'Full enrichment' : 'Minimal enrichment (no description)');
 
-    // Extract emails from job description
+    // Extract emails from job description (if available)
     const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
-    const emailsInDescription = description.match(emailRegex) || [];
-    console.log('[Enrichment] Found emails in description:', emailsInDescription);
+    const emailsInDescription = description ? (description.match(emailRegex) || []) : [];
+    if (emailsInDescription.length > 0) {
+      console.log('[Enrichment] Found emails in description:', emailsInDescription);
+    }
 
-    // Run all enrichment tasks in parallel for speed
-    const [jobInfo, companyInfo, companyData] = await Promise.all([
-      enrichJobDescription(description),
-      extractCompanyInfo(company, description),
-      scrapeCompanyWebsite(company),
-    ]);
+    // Run enrichment tasks in parallel
+    // If no description, skip description-based enrichment and use minimal data
+    let jobInfo, companyInfo, companyData;
+
+    if (description) {
+      // Full enrichment with description
+      [jobInfo, companyInfo, companyData] = await Promise.all([
+        enrichJobDescription(description),
+        extractCompanyInfo(company, description),
+        scrapeCompanyWebsite(company),
+      ]);
+    } else {
+      // Minimal enrichment without description - just company research
+      companyData = await scrapeCompanyWebsite(company);
+      jobInfo = {
+        summary: `AI enrichment for ${jobTitle} at ${company}. Add a job description for detailed insights.`,
+        skills: [],
+        responsibilities: [],
+        seniority: 'unknown',
+        remote: 'unknown',
+      };
+      companyInfo = {
+        industry: 'Unknown',
+        size: companyData.teamSize || 'Unknown',
+        hiringManager: `Hiring Manager for ${jobTitle}`,
+        department: 'Unknown',
+      };
+    }
 
     // Generate actionable insights and discover contacts
     const [actionableInsights, contactStrategies, contactIntelligence] = await Promise.all([
-      generateActionableInsights(
+      description ? generateActionableInsights(
         company,
         jobTitle,
         companyData,
         description
-      ),
+      ) : Promise.resolve({
+        whyThisMatters: `Learn more about ${company} and connect with the team for the ${jobTitle} role.`,
+        talkingPoints: [],
+        nextSteps: ['Add a job description for personalized action steps', 'Research the company website', 'Connect with team members on LinkedIn'],
+        emailSubjectLines: [],
+        interviewQuestions: [],
+      }),
       findCompanyContacts(
         company,
         companyInfo.department || 'Unknown',

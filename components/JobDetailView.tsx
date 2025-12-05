@@ -55,6 +55,8 @@ export default function JobDetailView({
   const [isUpdating, setIsUpdating] = useState(false);
   const [enriching, setEnriching] = useState(false);
   const [notes, setNotes] = useState(job.notes || '');
+  const [description, setDescription] = useState(job.raw_description || '');
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
 
   // Parse AI enrichment data
   let enrichedData: any = null;
@@ -94,11 +96,6 @@ export default function JobDetailView({
   };
 
   const handleEnrich = async () => {
-    if (!job.raw_description) {
-      alert('No job description available to enrich');
-      return;
-    }
-
     setEnriching(true);
     try {
       const response = await fetch('/api/enrichment', {
@@ -106,7 +103,7 @@ export default function JobDetailView({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           jobId: job.id,
-          description: job.raw_description,
+          description: job.raw_description || undefined,
           company: job.company,
           title: job.title
         })
@@ -237,13 +234,22 @@ export default function JobDetailView({
                 </svg>
               </a>
             )}
-            {!job.ai_enriched_at && job.raw_description && (
+            {!job.ai_enriched_at && (
               <button
                 onClick={handleEnrich}
                 disabled={enriching}
                 className="px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:shadow-lg font-semibold text-sm disabled:opacity-50"
               >
                 {enriching ? '✨ Analyzing...' : '✨ Enrich with AI'}
+              </button>
+            )}
+            {job.ai_enriched_at && (
+              <button
+                onClick={handleEnrich}
+                disabled={enriching}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold text-sm disabled:opacity-50"
+              >
+                {enriching ? '✨ Re-analyzing...' : '🔄 Re-enrich with AI'}
               </button>
             )}
             <button
