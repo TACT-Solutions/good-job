@@ -27,21 +27,25 @@ export async function scrapeCompanyWebsite(companyName: string): Promise<{
       messages: [
         {
           role: 'system',
-          content: `You are a company research assistant with access to public web data. Research the company and return JSON with:
-          - websiteUrl: Company website URL (e.g., "https://example.com")
-          - aboutText: 2-3 sentence description of what the company does
-          - recentNews: Array of 2-3 recent company developments, achievements, or news (with dates if available)
-          - techStack: Array of technologies/tools the company is known to use
+          content: `You are a company research assistant with knowledge of major companies and tech firms. For ANY company you research, provide comprehensive information based on what you know. Return JSON with:
+          - websiteUrl: Company website URL (e.g., "https://example.com") - REQUIRED, always provide this
+          - aboutText: 2-3 sentence description of what the company does - REQUIRED, use your knowledge
+          - recentNews: Array of 2-3 recent company developments, achievements, or news from your knowledge cutoff
+          - techStack: Array of technologies/tools the company is known to use (for tech companies)
           - companyValues: Array of company values or culture highlights
-          - teamSize: Estimated team size (e.g., "50-100 employees", "500+ employees")
-          - foundingYear: Year founded (e.g., "2015", "unknown")
-          - headquarters: HQ location (e.g., "San Francisco, CA", "Remote-first")
+          - teamSize: Estimated team size (e.g., "50-100", "500+", "10,000+") - REQUIRED, always estimate
+          - foundingYear: Year founded (e.g., "2015") - provide if known
+          - headquarters: HQ location (e.g., "San Francisco, CA") - REQUIRED, provide if known
 
-          Return ONLY valid JSON based on publicly known information.`,
+          For well-known companies (Fortune 500, major tech firms, etc.), you MUST provide detailed information.
+          Do NOT return "unknown" or empty values for major companies.
+          Return ONLY valid JSON.`,
         },
         {
           role: 'user',
-          content: `Research this company: ${companyName}`,
+          content: `Research company: ${companyName}
+
+Provide comprehensive information based on your knowledge. This company should be well-documented if it's a major corporation.`,
         },
       ],
       model: 'meta-llama/llama-4-scout-17b-16e-instruct', // Best value for research
@@ -172,18 +176,21 @@ export async function findCompanyContacts(
       messages: [
         {
           role: 'system',
-          content: `You are a networking strategist. Based on the company and role, suggest who to connect with. Return JSON with:
-          - suggestedRoles: Array of 3-4 job titles to search for on LinkedIn (e.g., "Engineering Manager", "Head of Product")
-          - searchStrategies: Array of 2-3 specific strategies to find these people (be tactical and specific)
-          - linkedInSearchUrl: A LinkedIn search URL to find relevant contacts
+          content: `You are a networking strategist for job seekers. Suggest WHO to contact and HOW to find them. Return JSON with:
+          - suggestedRoles: Array of 3-4 SPECIFIC job titles to search for (e.g., "Director of Customer Success", "VP of Legal Technology", NOT generic like "Manager")
+          - searchStrategies: Array of 2-3 SPECIFIC, ACTIONABLE strategies (e.g., "Search for Thomson Reuters employees who post about AI" NOT "Company-wide search")
+          - linkedInSearchUrl: A LinkedIn people search URL with the company name and relevant keywords
 
-          Return ONLY valid JSON.`,
+          Be TACTICAL and SPECIFIC. No generic advice like "departmental search" or "alumni search".
+          Return ONLY valid JSON with STRING values in searchStrategies array.`,
         },
         {
           role: 'user',
           content: `Company: ${companyName}
 Department: ${department}
-Job Title: ${jobTitle}`,
+Job Title: ${jobTitle}
+
+Generate specific, actionable networking strategies for this exact role at this company.`,
         },
       ],
       model: 'llama-3.1-8b-instant', // Fast for simple contact strategies
