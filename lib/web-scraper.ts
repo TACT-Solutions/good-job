@@ -31,8 +31,8 @@ export async function scrapeCompanyWebsite(companyName: string): Promise<{
     // Use Claude Haiku for company research - better knowledge of major companies
     const message = await anthropic.messages.create({
       model: 'claude-3-5-haiku-20241022', // Fast, cheap, excellent knowledge
-      max_tokens: 1500,
-      temperature: 0.2,
+      max_tokens: 2500, // Increased for detailed responses with specific examples
+      temperature: 0.3, // Slightly higher for more comprehensive answers
       messages: [
         {
           role: 'user',
@@ -62,10 +62,17 @@ CRITICAL REQUIREMENTS:
     const result = message.content[0].type === 'text' ? message.content[0].text : '';
     if (!result) throw new Error('No response from Claude');
 
+    console.log('[Scraper] Raw Claude response length:', result.length);
     const cleanedResult = result.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     const data = JSON.parse(cleanedResult);
 
     console.log('[Scraper] Successfully researched company with Claude:', companyName);
+    console.log('[Scraper] Company data preview:', {
+      teamSize: data.teamSize,
+      foundingYear: data.foundingYear,
+      newsCount: data.recentNews?.length || 0,
+      hasSpecificNews: data.recentNews?.some((n: string) => n.includes('Casetext') || n.includes('acquired') || n.includes('$'))
+    });
     return data;
   } catch (error) {
     console.error('[Scraper] Company research error:', error);
