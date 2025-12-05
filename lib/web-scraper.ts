@@ -36,21 +36,25 @@ export async function scrapeCompanyWebsite(companyName: string): Promise<{
       messages: [
         {
           role: 'user',
-          content: `Research this company: ${companyName}
+          content: `Research this company and provide the MOST comprehensive information available: ${companyName}
 
-You are a company research assistant. Provide comprehensive information about this company based on your training data. Return ONLY valid JSON with:
-- websiteUrl: Company website URL (e.g., "https://example.com") - REQUIRED
-- aboutText: 2-3 sentence description of what the company does - REQUIRED
-- recentNews: Array of 2-3 recent company developments, achievements, or news from your knowledge
-- techStack: Array of technologies/tools the company is known to use (for tech companies)
-- companyValues: Array of company values or culture highlights
-- teamSize: Estimated team size (e.g., "50-100", "500+", "10,000+", "70,000+") - REQUIRED
-- foundingYear: Year founded (e.g., "1851", "2015") - provide if known
-- headquarters: HQ location (e.g., "Toronto, Canada", "San Francisco, CA") - REQUIRED
+You are a company research assistant. Use your full training data knowledge to provide detailed information. Return ONLY valid JSON with:
+- websiteUrl: Company website URL (e.g., "https://thomsonreuters.com") - REQUIRED
+- aboutText: 2-3 sentences covering what they do AND any major recent developments (acquisitions, AI launches, etc.) - REQUIRED, be specific
+- recentNews: Array of 2-3 SPECIFIC recent developments with details (e.g., "Acquired Casetext for $650M in June 2023 to expand AI legal research capabilities") - Use your training data, be detailed
+- techStack: Array of technologies/tools they use (for tech companies) - Be specific about their tech
+- companyValues: Array of actual company values or culture highlights from their public materials
+- teamSize: Total global employee count estimate (e.g., "50-100", "500+", "10,000+", "70,000+") - Use highest known number across all divisions, NOT just one office
+- foundingYear: Historical founding year with context if company has long history (e.g., "1851 (Reuters founded)", "2008 (Thomson Reuters merger)") - Include full context
+- headquarters: Primary global HQ location (e.g., "Toronto, Canada") - REQUIRED
 
-For well-known companies (Fortune 500, major corporations, tech firms), you MUST provide detailed, accurate information.
-Do NOT return "unknown" or empty values for major companies like Thomson Reuters, Google, Microsoft, etc.
-Return ONLY the JSON object, no other text.`,
+CRITICAL REQUIREMENTS:
+- For Fortune 500 companies (Thomson Reuters, Microsoft, etc.), provide SPECIFIC, DETAILED information
+- Include major acquisitions especially in AI/tech (e.g., Thomson Reuters acquired Casetext 2023)
+- Use complete historical context (Reuters 1851 history + Thomson merger 2008 = Thomson Reuters)
+- Employee counts should reflect GLOBAL workforce, not underestimate
+- Recent news must be SPECIFIC with details, dates, dollar amounts if known
+- Return ONLY the JSON object, no markdown, no other text.`,
         },
       ],
     });
