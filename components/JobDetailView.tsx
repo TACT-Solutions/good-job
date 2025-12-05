@@ -665,12 +665,16 @@ export default function JobDetailView({
                 <div className="mb-4">
                   <h4 className="text-sm font-semibold text-slate-700 mb-2">Search Strategies</h4>
                   <ul className="space-y-2">
-                    {enrichedData.searchStrategies.map((strategy: string, idx: number) => (
-                      <li key={idx} className="flex items-start gap-2 text-slate-600 text-sm">
-                        <span className="text-blue-500">▸</span>
-                        <span>{strategy}</span>
-                      </li>
-                    ))}
+                    {enrichedData.searchStrategies.map((strategy: any, idx: number) => {
+                      // Handle both string and object formats (for backward compatibility)
+                      const strategyText = typeof strategy === 'string' ? strategy : strategy.strategy || String(strategy);
+                      return (
+                        <li key={idx} className="flex items-start gap-2 text-slate-600 text-sm">
+                          <span className="text-blue-500">▸</span>
+                          <span>{strategyText}</span>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               )}
