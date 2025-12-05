@@ -99,17 +99,37 @@ export default function JobCard({ job }: { job: Job }) {
         {/* AI Enrichment Badge */}
         <JobEnrichmentBadge job={{ ...job, extracted_description: enriched }} />
 
-        {/* Enrich Button (only show if not already enriched and has description) */}
-        {!enriched && job.raw_description && (
+        {/* Enrich Button - Show if not enriched OR allow re-enrichment */}
+        {!enriched && (
+          job.raw_description ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEnrich();
+              }}
+              disabled={enriching}
+              className="mt-2 px-3 py-1 bg-gradient-to-r from-purple-500 to-blue-500 text-white text-xs font-semibold rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {enriching ? '✨ Analyzing...' : '✨ Enrich with AI'}
+            </button>
+          ) : (
+            <div className="mt-2 text-xs text-slate-500 italic">
+              Add a job description to enable AI enrichment
+            </div>
+          )
+        )}
+
+        {/* Re-enrich Button for already enriched jobs */}
+        {enriched && job.raw_description && (
           <button
             onClick={(e) => {
               e.stopPropagation();
               handleEnrich();
             }}
             disabled={enriching}
-            className="mt-2 px-3 py-1 bg-gradient-to-r from-purple-500 to-blue-500 text-white text-xs font-semibold rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="mt-2 px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {enriching ? '✨ Analyzing...' : '✨ Enrich with AI'}
+            {enriching ? '✨ Re-analyzing...' : '🔄 Re-enrich with AI'}
           </button>
         )}
 
