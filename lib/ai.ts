@@ -99,20 +99,30 @@ export async function extractCompanyInfo(companyName: string, jobDescription: st
       messages: [
         {
           role: 'system',
-          content: `Extract company information and return JSON with:
-          - industry: The company's industry
-          - size: Estimated company size (startup, small, medium, large, enterprise)
-          - hiringManager: Likely job title of the hiring manager (e.g., "Engineering Manager", "VP of Product")
-          - department: The department hiring (e.g., "Engineering", "Marketing")
+          content: `You are a job description analyzer. Your task is to EXTRACT company information DIRECTLY from the job description text provided.
 
-          Return ONLY valid JSON.`,
+CRITICAL: You must infer information FROM THE JOB DESCRIPTION TEXT, not from your general knowledge.
+
+Extract and return JSON with:
+- industry: What industry does this company operate in? Look for clues like product descriptions, tech stack, domain mentions (e.g., "legal technology", "healthcare software", "fintech")
+- size: Estimate company size based on team structure, scale of operations, funding mentions, office locations. Options: "startup" (1-50), "small" (51-200), "medium" (201-1000), "large" (1001-10000), "enterprise" (10000+)
+- hiringManager: Who would likely hire for this role? Infer from the department and seniority (e.g., "Engineering Manager", "VP of Product", "Director of Marketing")
+- department: Which department is hiring? Look at the role responsibilities, reporting structure, team mentions (e.g., "Engineering", "Product", "Marketing", "Sales")
+
+IMPORTANT:
+- If the description mentions company details (size, industry, team), USE THEM
+- Make educated inferences from job responsibilities, tech stack, and role context
+- NEVER return "Unknown" - always make your best inference from the description
+- If truly no clues exist, use generic but logical defaults based on the job title
+
+Return ONLY valid JSON.`,
         },
         {
           role: 'user',
           content: `Company: ${companyName}\n\nJob Description:\n${jobDescription}`,
         },
       ],
-      model: 'llama-3.1-8b-instant', // Fast & cheap for simple company info
+      model: 'llama-3.1-8b-instant', // Fast & cheap for extraction
       temperature: 0.2,
       max_tokens: 300,
     });
