@@ -141,3 +141,31 @@ export async function extractCompanyInfo(companyName: string, jobDescription: st
     };
   }
 }
+
+/**
+ * Validate company intelligence data and return validation results
+ * Returns true if data is complete, false if critical fields are missing or "Unknown"
+ */
+export function validateCompanyIntelligence(companyInfo: {
+  industry: string;
+  size: string;
+  department: string;
+}): { isValid: boolean; missingFields: string[] } {
+  const missingFields: string[] = [];
+
+  // Check for "Unknown" or empty values in critical fields
+  if (!companyInfo.industry || companyInfo.industry.toLowerCase() === 'unknown' || companyInfo.industry.trim() === '') {
+    missingFields.push('industry');
+  }
+  if (!companyInfo.size || companyInfo.size.toLowerCase() === 'unknown' || companyInfo.size.trim() === '') {
+    missingFields.push('size');
+  }
+  if (!companyInfo.department || companyInfo.department.toLowerCase() === 'unknown' || companyInfo.department.trim() === '') {
+    missingFields.push('department');
+  }
+
+  return {
+    isValid: missingFields.length === 0,
+    missingFields,
+  };
+}

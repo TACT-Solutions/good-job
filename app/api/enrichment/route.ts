@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { enrichJobDescription, extractCompanyInfo } from '@/lib/ai';
+import { enrichJobDescription, extractCompanyInfo, validateCompanyIntelligence } from '@/lib/ai';
 import {
   scrapeCompanyWebsite,
   generateActionableInsights,
   findCompanyContacts,
+  enrichCompanyIntelligenceWithClaude,
 } from '@/lib/web-scraper';
 import { getContactIntelligence } from '@/lib/contact-discovery';
 
@@ -113,6 +114,45 @@ export async function POST(request: NextRequest) {
       };
     }
 
+    // VALIDATION: Check if company intelligence has "Unknown" values
+    const validation = validateCompanyIntelligence({
+      industry: companyInfo.industry,
+      size: companyInfo.size,
+      department: companyInfo.department,
+    });
+
+    // FALLBACK: If validation fails, use Claude for enhanced research
+    let enhancedCompanyInfo = companyInfo;
+    if (!validation.isValid && description) {
+      console.log('[Enrichment] Validation failed for fields:', validation.missingFields);
+      console.log('[Enrichment] Attempting Claude fallback for enhanced intelligence...');
+
+      try {
+        const claudeIntelligence = await enrichCompanyIntelligenceWithClaude(
+          company,
+          jobTitle,
+          description
+        );
+
+        // Merge Claude results with original, replacing "Unknown" values
+        enhancedCompanyInfo = {
+          ...companyInfo,
+          industry: validation.missingFields.includes('industry') ? claudeIntelligence.industry : companyInfo.industry,
+          size: validation.missingFields.includes('size') ? claudeIntelligence.size : companyInfo.size,
+          department: validation.missingFields.includes('department') ? claudeIntelligence.department : companyInfo.department,
+        };
+
+        console.log('[Enrichment] Claude fallback successful:', {
+          industry: enhancedCompanyInfo.industry,
+          size: enhancedCompanyInfo.size,
+          department: enhancedCompanyInfo.department,
+        });
+      } catch (claudeError) {
+        console.error('[Enrichment] Claude fallback failed:', claudeError);
+        // Keep original values if Claude fails
+      }
+    }
+
     // Generate actionable insights and discover contacts
     const [actionableInsights, contactStrategies, contactIntelligence] = await Promise.all([
       description ? generateActionableInsights(
@@ -129,13 +169,13 @@ export async function POST(request: NextRequest) {
       }),
       findCompanyContacts(
         company,
-        companyInfo.department || 'Unknown',
+        enhancedCompanyInfo.department || 'Unknown',
         jobTitle
       ),
       getContactIntelligence(
         company,
         jobTitle,
-        companyInfo.department || 'Unknown',
+        enhancedCompanyInfo.department || 'Unknown',
         companyData.websiteUrl ? (
           (() => {
             try {
@@ -149,16 +189,16 @@ export async function POST(request: NextRequest) {
     ]);
 
     const extractedData = {
-      // Original enrichment data
+      // Original enrichment data (using enhanced company info with fallback)
       summary: jobInfo.summary,
       skills: jobInfo.skills,
       responsibilities: jobInfo.responsibilities,
       seniority: jobInfo.seniority,
       remote: jobInfo.remote,
-      industry: companyInfo.industry,
-      companySize: companyInfo.size,
-      hiringManager: companyInfo.hiringManager,
-      department: companyInfo.department,
+      industry: enhancedCompanyInfo.industry,
+      companySize: enhancedCompanyInfo.size,
+      hiringManager: enhancedCompanyInfo.hiringManager,
+      department: enhancedCompanyInfo.department,
 
       // NEW: Company research data
       companyWebsite: companyData.websiteUrl,

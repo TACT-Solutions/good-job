@@ -173,6 +173,99 @@ Job Description excerpt: ${jobDescription.substring(0, 500)}...`,
   }
 }
 
+/**
+ * Enhanced company intelligence using Claude with web research capabilities
+ * Used as fallback when initial extraction returns "Unknown" values
+ */
+export async function enrichCompanyIntelligenceWithClaude(
+  companyName: string,
+  jobTitle: string,
+  jobDescription: string
+): Promise<{
+  industry: string;
+  size: string;
+  department: string;
+}> {
+  try {
+    console.log('[Scraper] Using Claude for enhanced company intelligence research:', companyName);
+
+    const message = await anthropic.messages.create({
+      model: 'claude-3-5-haiku-20241022',
+      max_tokens: 1500,
+      temperature: 0.2,
+      messages: [
+        {
+          role: 'user',
+          content: `Research this company and provide detailed intelligence: ${companyName}
+
+Job Title: ${jobTitle}
+Job Description: ${jobDescription.substring(0, 1000)}...
+
+You are a company intelligence analyst. Use your full training data knowledge to identify:
+
+1. INDUSTRY: What industry/sector does this company operate in? Be specific (e.g., "Legal Technology", "Enterprise Software", "Financial Services", "Healthcare IT"). If it's a well-known company, use your knowledge. If not, infer from the job description.
+
+2. SIZE: What is the company size? Choose the most accurate option based on your knowledge:
+   - "startup" (1-50 employees)
+   - "small" (51-200 employees)
+   - "medium" (201-1000 employees)
+   - "large" (1001-10000 employees)
+   - "enterprise" (10000+ employees)
+
+3. DEPARTMENT: What department is hiring for this role? Be specific (e.g., "Engineering", "Legal Technology", "Product", "Customer Success", "Data Science", "Marketing").
+
+CRITICAL: DO NOT return "Unknown" for any field. Use your training data knowledge of companies, and if you don't know the company, make educated inferences from:
+- The job title and description
+- Common industry patterns
+- Technology stack mentioned
+- Team structure hints
+- Role responsibilities
+
+Return ONLY valid JSON with these exact fields:
+{
+  "industry": "specific industry name",
+  "size": "startup|small|medium|large|enterprise",
+  "department": "specific department name"
+}`,
+        },
+      ],
+    });
+
+    const result = message.content[0].type === 'text' ? message.content[0].text : '';
+    if (!result) throw new Error('No response from Claude');
+
+    const cleanedResult = result.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const data = JSON.parse(cleanedResult);
+
+    console.log('[Scraper] Claude enhanced intelligence:', {
+      industry: data.industry,
+      size: data.size,
+      department: data.department,
+    });
+
+    return {
+      industry: data.industry || 'Technology',
+      size: data.size || 'medium',
+      department: data.department || 'General',
+    };
+  } catch (error) {
+    console.error('[Scraper] Claude intelligence enhancement error:', error);
+    // Last resort fallback - infer from job title
+    const department = jobTitle.toLowerCase().includes('engineer') ? 'Engineering' :
+                      jobTitle.toLowerCase().includes('product') ? 'Product' :
+                      jobTitle.toLowerCase().includes('market') ? 'Marketing' :
+                      jobTitle.toLowerCase().includes('sales') ? 'Sales' :
+                      jobTitle.toLowerCase().includes('data') ? 'Data & Analytics' :
+                      'General';
+
+    return {
+      industry: 'Technology',
+      size: 'medium',
+      department,
+    };
+  }
+}
+
 export async function findCompanyContacts(
   companyName: string,
   department: string,
