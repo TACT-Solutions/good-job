@@ -34,6 +34,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupJobForm();
   setupLogout();
   setupStatusSelector();
+  setupFormAutoSave();
+  setupResetButton();
 });
 
 // Get stored session from chrome.storage
@@ -186,6 +188,9 @@ function setupJobForm() {
 
       const jobId = data[0].id;
 
+      // Clear draft data - job is now saved
+      await clearDraftData();
+
       // Show initial success
       showMessage(messageDiv, '✓ Job saved!', 'success');
       loadStats(); // Refresh stats
@@ -271,7 +276,7 @@ function setupStatusSelector() {
 }
 
 // Load current page data
-function loadCurrentPageData() {
+async function loadCurrentPageData() {
   const urlInput = document.getElementById('url');
   const titleInput = document.getElementById('title');
   const companyInput = document.getElementById('company');
@@ -281,11 +286,40 @@ function loadCurrentPageData() {
   const jobTypeSelect = document.getElementById('jobType');
   const sourceInfo = document.getElementById('sourceInfo');
 
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+  chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
     const currentTab = tabs[0];
-    urlInput.value = currentTab.url;
+    const currentUrl = currentTab.url;
+    urlInput.value = currentUrl;
 
-    // Try to extract job data from the page
+    // FIRST: Check if we have saved draft data for this URL
+    const { draft_job_data } = await chrome.storage.local.get('draft_job_data');
+    const hasDraft = draft_job_data && draft_job_data.url === currentUrl;
+
+    if (hasDraft) {
+      console.log('[GoodJob] Restoring draft data from storage');
+      // Restore draft data
+      if (draft_job_data.title) titleInput.value = draft_job_data.title;
+      if (draft_job_data.company) companyInput.value = draft_job_data.company;
+      if (draft_job_data.description) descriptionInput.value = draft_job_data.description;
+      if (draft_job_data.location) locationInput.value = draft_job_data.location;
+      if (draft_job_data.salary) salaryInput.value = draft_job_data.salary;
+      if (draft_job_data.jobType) jobTypeSelect.value = draft_job_data.jobType;
+      if (draft_job_data.status) {
+        document.querySelector(`input[name="status"][value="${draft_job_data.status}"]`).checked = true;
+        document.querySelectorAll('.status-option').forEach(opt => opt.classList.remove('active'));
+        document.querySelector(`input[name="status"][value="${draft_job_data.status}"]`).closest('.status-option').classList.add('active');
+      }
+      currentJobData = draft_job_data.currentJobData || null;
+
+      // Show source badge if available
+      if (draft_job_data.source) {
+        sourceInfo.innerHTML = `<span class="source-badge">📍 ${draft_job_data.source}</span>`;
+      }
+
+      return; // Use draft data, don't re-extract
+    }
+
+    // SECOND: No draft found, extract fresh data from page
     chrome.tabs.sendMessage(currentTab.id, { action: 'extractJobData' }, (response) => {
       if (chrome.runtime.lastError) {
         // Content script not loaded, that's okay
@@ -312,6 +346,9 @@ function loadCurrentPageData() {
 
         // Check for duplicates
         checkDuplicate(response.title, response.company);
+
+        // Auto-save initial extraction to draft
+        saveDraftData();
       }
     });
   });
@@ -389,4 +426,96 @@ async function loadStats() {
 // Show message helper
 function showMessage(element, message, type) {
   element.innerHTML = `<div class="message ${type}">${message}</div>`;
+}
+
+// Save draft data to chrome.storage (debounced)
+let saveDraftTimeout = null;
+async function saveDraftData() {
+  clearTimeout(saveDraftTimeout);
+
+  saveDraftTimeout = setTimeout(async () => {
+    const titleInput = document.getElementById('title');
+    const companyInput = document.getElementById('company');
+    const descriptionInput = document.getElementById('description');
+    const locationInput = document.getElementById('location');
+    const salaryInput = document.getElementById('salary');
+    const jobTypeSelect = document.getElementById('jobType');
+    const urlInput = document.getElementById('url');
+    const statusInput = document.querySelector('input[name="status"]:checked');
+
+    const draftData = {
+      url: urlInput.value,
+      title: titleInput.value,
+      company: companyInput.value,
+      description: descriptionInput.value,
+      location: locationInput.value,
+      salary: salaryInput.value,
+      jobType: jobTypeSelect.value,
+      status: statusInput?.value || 'saved',
+      source: currentJobData?.source || null,
+      currentJobData: currentJobData,
+      savedAt: new Date().toISOString()
+    };
+
+    await chrome.storage.local.set({ draft_job_data: draftData });
+    console.log('[GoodJob] Draft data saved');
+  }, 500); // Debounce by 500ms
+}
+
+// Clear draft data
+async function clearDraftData() {
+  await chrome.storage.local.remove('draft_job_data');
+  console.log('[GoodJob] Draft data cleared');
+}
+
+// Setup auto-save on form changes
+function setupFormAutoSave() {
+  const formInputs = [
+    'title',
+    'company',
+    'description',
+    'location',
+    'salary',
+    'jobType'
+  ];
+
+  formInputs.forEach(id => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.addEventListener('input', saveDraftData);
+      element.addEventListener('change', saveDraftData);
+    }
+  });
+
+  // Also save when status changes
+  const statusOptions = document.querySelectorAll('input[name="status"]');
+  statusOptions.forEach(option => {
+    option.addEventListener('change', saveDraftData);
+  });
+}
+
+// Setup reset button
+function setupResetButton() {
+  // Create reset button (will add to HTML next)
+  const resetBtn = document.getElementById('resetBtn');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+
+      if (confirm('Clear form and re-extract job data from page?')) {
+        // Clear draft data
+        await clearDraftData();
+
+        // Reload page data (will re-extract)
+        await loadCurrentPageData();
+
+        // Show confirmation
+        const messageDiv = document.getElementById('jobMessage');
+        showMessage(messageDiv, '✓ Form reset! Data re-extracted from page.', 'info');
+        setTimeout(() => {
+          messageDiv.innerHTML = '';
+        }, 2000);
+      }
+    });
+  }
 }

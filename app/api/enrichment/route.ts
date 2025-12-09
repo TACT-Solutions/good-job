@@ -38,6 +38,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // VALIDATION: Prevent URLs and job board platform names from being processed
+    const invalidCompanyPatterns = [
+      '.com', '.net', '.org', '.io', '.co',
+      'linkedin', 'indeed', 'glassdoor', 'ziprecruiter',
+      'monster', 'careerbuilder', 'dice', 'simplyhired',
+      'http://', 'https://', 'www.',
+    ];
+
+    const companyLower = company.toLowerCase().trim();
+    const isInvalidCompany = invalidCompanyPatterns.some(pattern =>
+      companyLower.includes(pattern)
+    );
+
+    if (isInvalidCompany) {
+      console.error('[Enrichment] Invalid company name detected:', company);
+      console.error('[Enrichment] This appears to be a URL or job board platform name');
+      return NextResponse.json(
+        {
+          error: `Invalid company name: "${company}" appears to be a URL or job board platform name. Please provide the actual employer name from the job posting.`,
+          suggestion: 'Check the job posting for the actual company/employer name (usually in the company field or header)'
+        },
+        { status: 400 }
+      );
+    }
+
     // Fetch job title if not provided
     let jobTitle = title;
     if (!jobTitle) {

@@ -40,6 +40,37 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Job not found' }, { status: 404 });
     }
 
+    // VALIDATION: Prevent URLs and job board platform names from being processed
+    const invalidCompanyPatterns = [
+      '.com', '.net', '.org', '.io', '.co',
+      'linkedin', 'indeed', 'glassdoor', 'ziprecruiter',
+      'monster', 'careerbuilder', 'dice', 'simplyhired',
+      'http://', 'https://', 'www.',
+    ];
+
+    const companyLower = job.company.toLowerCase().trim();
+    const isInvalidCompany = invalidCompanyPatterns.some(pattern =>
+      companyLower.includes(pattern)
+    );
+
+    if (isInvalidCompany) {
+      console.error('[Auto-Enrichment] Invalid company name detected:', job.company);
+      console.error('[Auto-Enrichment] Skipping enrichment - appears to be URL or platform name');
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Invalid company name: "${job.company}" appears to be a URL or job board platform name.`,
+          insights: {
+            seniority: 'unknown',
+            remote: 'unknown',
+            topSkills: [],
+            summary: 'Please update the company name to the actual employer before enriching.',
+          },
+        },
+        { status: 400 }
+      );
+    }
+
     // Extract emails from job description
     const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
     const emailsInDescription = (job.raw_description || '').match(emailRegex) || [];
