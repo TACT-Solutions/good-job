@@ -145,6 +145,16 @@ async function extractJobInfo() {
       '[data-company-name="true"]'
     ]);
 
+    // VALIDATION: Ensure we didn't extract platform name
+    if (company && (company.toLowerCase() === 'indeed' || company.toLowerCase().includes('jobs'))) {
+      console.log('[GoodJob] WARNING: Extracted company appears to be platform name:', company);
+      const companyLink = document.querySelector('[data-testid="inlineHeader-companyName"]');
+      if (companyLink && companyLink.textContent) {
+        company = companyLink.textContent.trim();
+        console.log('[GoodJob] Corrected company name:', company);
+      }
+    }
+
     location = trySelectors([
       '[data-testid="job-location"]',
       '.jobsearch-JobInfoHeader-subtitle [data-testid="text-location"]',
@@ -198,6 +208,16 @@ async function extractJobInfo() {
       '.EmployerProfile_employerName__Xemli',
       '[data-test="employerName"]'
     ]);
+
+    // VALIDATION: Ensure we didn't extract platform name
+    if (company && (company.toLowerCase() === 'glassdoor' || company.toLowerCase().includes('jobs'))) {
+      console.log('[GoodJob] WARNING: Extracted company appears to be platform name:', company);
+      const companyLink = document.querySelector('[data-test="employer-name"]');
+      if (companyLink && companyLink.textContent) {
+        company = companyLink.textContent.trim();
+        console.log('[GoodJob] Corrected company name:', company);
+      }
+    }
 
     location = trySelectors([
       '[data-test="location"]',
