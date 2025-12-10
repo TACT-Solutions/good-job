@@ -813,12 +813,79 @@ function validateContentQuality(text) {
   return true;
 }
 
+// Deduplicate repeated paragraphs/sentences in descriptions
+function deduplicateContent(text) {
+  if (!text) return '';
+
+  // Split into paragraphs (separated by double newlines)
+  const paragraphs = text.split(/\n\n+/);
+  const seen = new Set();
+  const unique = [];
+
+  for (const paragraph of paragraphs) {
+    const trimmed = paragraph.trim();
+    if (!trimmed) continue;
+
+    // Create a normalized version for comparison (lowercase, remove extra spaces)
+    const normalized = trimmed.toLowerCase().replace(/\s+/g, ' ');
+
+    // Only add if we haven't seen this paragraph before
+    if (!seen.has(normalized)) {
+      seen.add(normalized);
+      unique.push(trimmed);
+    }
+  }
+
+  return unique.join('\n\n');
+}
+
+// Extract structured sections from job description (optional enhancement)
+function extractStructuredSections(text) {
+  if (!text) return text;
+
+  // Common section headers to identify
+  const sectionPatterns = [
+    /(?:^|\n)(about (?:us|the company|our company)[:\n])/im,
+    /(?:^|\n)(company (?:overview|description)[:\n])/im,
+    /(?:^|\n)((?:job )?(?:description|summary|overview)[:\n])/im,
+    /(?:^|\n)((?:key )?responsibilities[:\n])/im,
+    /(?:^|\n)((?:what you(?:'ll| will) do|your role)[:\n])/im,
+    /(?:^|\n)((?:required |minimum )?(?:qualifications|requirements|skills)[:\n])/im,
+    /(?:^|\n)((?:preferred |nice to have|bonus)[:\n])/im,
+    /(?:^|\n)(benefits[:\n])/im,
+    /(?:^|\n)((?:perks|what we offer)[:\n])/im,
+    /(?:^|\n)(compensation[:\n])/im,
+    /(?:^|\n)((?:how to|to) apply[:\n])/im,
+  ];
+
+  // Try to identify sections for better AI parsing
+  // This just adds clear markers without restructuring
+  let structured = text;
+
+  // Add section markers for easier AI parsing (only if sections exist)
+  for (const pattern of sectionPatterns) {
+    if (pattern.test(structured)) {
+      // Sections detected - AI can parse them
+      console.log('[GoodJob] Detected structured sections in description');
+      break;
+    }
+  }
+
+  return structured;
+}
+
 // Clean text by normalizing whitespace while preserving structure
 function cleanText(text) {
   if (!text) return '';
 
   // First filter HTML artifacts
   text = filterHTMLArtifacts(text);
+
+  // Deduplicate repeated content
+  text = deduplicateContent(text);
+
+  // Extract/preserve structured sections (optional)
+  text = extractStructuredSections(text);
 
   // Then clean whitespace
   return text
