@@ -521,13 +521,13 @@ function extractJobInfo() {
       '[class*="pay"]'
     ], 0, 200);
 
-    // Get description
+    // Get description - allow up to 10k chars for full content
     const descriptionElements = document.querySelectorAll('[class*="description"], [class*="detail"], [id*="description"]');
     if (descriptionElements.length > 0) {
-      description = descriptionElements[0].textContent?.trim().substring(0, 2000) || '';
+      description = descriptionElements[0].textContent?.trim().substring(0, 10000) || '';
     } else {
       const bodyText = document.body.textContent?.trim();
-      description = bodyText ? bodyText.substring(0, 1000) : '';
+      description = bodyText ? bodyText.substring(0, 5000) : '';
     }
 
     // Parse missing fields from description
@@ -581,7 +581,7 @@ function extractJobInfo() {
 }
 
 // Helper function to try multiple selectors
-function trySelectors(selectors, minLength = 0, maxLength = 1000) {
+function trySelectors(selectors, minLength = 0, maxLength = 10000) {
   for (const selector of selectors) {
     const elements = document.querySelectorAll(selector);
     for (const el of elements) {
