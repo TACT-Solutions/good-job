@@ -49,7 +49,7 @@ async function extractJobInfo() {
       '[data-anonymize="job-title"]'
     ]);
 
-    // Company - multiple selectors
+    // Company - multiple selectors with validation
     company = trySelectors([
       '.job-details-jobs-unified-top-card__company-name',
       '.jobs-unified-top-card__company-name a',
@@ -61,6 +61,17 @@ async function extractJobInfo() {
       '[data-anonymize="company-name"]'
     ]);
 
+    // VALIDATION: Ensure we didn't extract "LinkedIn" or job board name as company
+    if (company && (company.toLowerCase() === 'linkedin' || company.toLowerCase().includes('jobs'))) {
+      console.log('[GoodJob] WARNING: Extracted company appears to be platform name:', company);
+      // Try alternative selector - look for actual company link
+      const companyLink = document.querySelector('.job-details-jobs-unified-top-card__company-name a, .jobs-unified-top-card__company-name a');
+      if (companyLink && companyLink.textContent) {
+        company = companyLink.textContent.trim();
+        console.log('[GoodJob] Corrected company name:', company);
+      }
+    }
+
     // Location - multiple selectors
     location = trySelectors([
       '.job-details-jobs-unified-top-card__bullet',
@@ -68,16 +79,24 @@ async function extractJobInfo() {
       '.jobs-unified-top-card__workplace-type'
     ]);
 
-    // Description - multiple selectors
-    description = trySelectors([
-      '.jobs-description__content',
-      '.jobs-box__html-content',
-      '.jobs-description',
-      '.jobs-description-content__text',
-      '.show-more-less-html__markup',
-      '#job-details',
-      '[data-job-details]'
-    ]);
+    // Description - multiple selectors (now should get full expanded content)
+    // Also try to capture hidden content (not just visible)
+    const descriptionContainer = document.querySelector('.jobs-description__content, .jobs-box__html-content, .jobs-description');
+    if (descriptionContainer) {
+      // Get all text, including hidden elements
+      description = descriptionContainer.textContent?.trim() || '';
+    } else {
+      // Fallback to trySelectors
+      description = trySelectors([
+        '.jobs-description__content',
+        '.jobs-box__html-content',
+        '.jobs-description',
+        '.jobs-description-content__text',
+        '.show-more-less-html__markup',
+        '#job-details',
+        '[data-job-details]'
+      ]);
+    }
 
     // Salary - multiple approaches
     // Try direct selectors first
@@ -575,6 +594,12 @@ async function extractJobInfo() {
   salary = cleanText(salary);
   description = cleanText(description);
 
+  // VALIDATION: Check description quality
+  if (description && !validateContentQuality(description)) {
+    console.log('[GoodJob] WARNING: Description failed quality validation');
+    description = ''; // Clear invalid description
+  }
+
   console.log('[GoodJob] Final cleaned data:', {
     title: title,
     company: company,
@@ -721,9 +746,81 @@ function parseRelativeDate(text) {
   return null;
 }
 
+// Filter HTML artifacts and noise from descriptions
+function filterHTMLArtifacts(text) {
+  if (!text) return '';
+
+  // Remove common button/UI text patterns
+  const artifactPatterns = [
+    /apply\s+now/gi,
+    /share\s+this\s+job/gi,
+    /share\s+job/gi,
+    /save\s+job/gi,
+    /save\s+this\s+job/gi,
+    /job\s+alert/gi,
+    /sign\s+in\s+to\s+apply/gi,
+    /click\s+here\s+to\s+apply/gi,
+    /view\s+all\s+jobs/gi,
+    /similar\s+jobs/gi,
+    /recommended\s+for\s+you/gi,
+    /back\s+to\s+search/gi,
+    /print\s+job/gi,
+    /report\s+job/gi,
+  ];
+
+  let cleaned = text;
+  for (const pattern of artifactPatterns) {
+    cleaned = cleaned.replace(pattern, '');
+  }
+
+  return cleaned;
+}
+
+// Validate content quality to prevent garbage data
+function validateContentQuality(text) {
+  if (!text || text.length < 50) {
+    return false; // Too short to be meaningful
+  }
+
+  // Check for error messages
+  const errorKeywords = [
+    'page not found',
+    '404 error',
+    'sign in required',
+    'login required',
+    'access denied',
+    'permission denied',
+    'expired job',
+    'job no longer available',
+    'this position has been filled',
+  ];
+
+  const lowerText = text.toLowerCase();
+  for (const keyword of errorKeywords) {
+    if (lowerText.includes(keyword)) {
+      console.log('[GoodJob] Content validation failed: Found error keyword:', keyword);
+      return false;
+    }
+  }
+
+  // Count words - job descriptions should have at least 20 words
+  const wordCount = text.trim().split(/\s+/).length;
+  if (wordCount < 20) {
+    console.log('[GoodJob] Content validation failed: Too few words:', wordCount);
+    return false;
+  }
+
+  return true;
+}
+
 // Clean text by normalizing whitespace while preserving structure
 function cleanText(text) {
   if (!text) return '';
+
+  // First filter HTML artifacts
+  text = filterHTMLArtifacts(text);
+
+  // Then clean whitespace
   return text
     // Normalize multiple spaces/tabs to single space
     .replace(/[ \t]+/g, ' ')
