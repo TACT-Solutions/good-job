@@ -29,13 +29,12 @@ async function extractJobInfo() {
 
     if (isSearchView) {
       console.log('[GoodJob] Detected LinkedIn search/listing view (company jobs or search results)');
-      console.log('[GoodJob] IMPORTANT: For best results, click on the job posting to open it in a dedicated page');
-      console.log('[GoodJob] Current URL pattern is not optimal for extraction - job details may be in a dynamic panel');
+      console.log('[GoodJob] Waiting 2 seconds for job details panel to load...');
 
       // For search view, we need to target the job details panel/modal on the right side
-      // The selectors are different here - they target the active job card in the results
-      // Wait a bit for the panel to load
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Wait longer for the dynamic panel to fully render
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log('[GoodJob] Starting extraction from search view panel');
     }
 
     // IMPORTANT: Click "Show more" button to expand full description before extraction
