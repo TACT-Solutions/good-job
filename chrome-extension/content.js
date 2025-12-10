@@ -24,6 +24,20 @@ async function extractJobInfo() {
     source = 'LinkedIn';
     console.log('[GoodJob] Extracting LinkedIn job data from:', url);
 
+    // Check if this is a search/listing view (company page jobs, search results, etc.)
+    const isSearchView = url.includes('/jobs/search/') || url.includes('currentJobId=');
+
+    if (isSearchView) {
+      console.log('[GoodJob] Detected LinkedIn search/listing view (company jobs or search results)');
+      console.log('[GoodJob] IMPORTANT: For best results, click on the job posting to open it in a dedicated page');
+      console.log('[GoodJob] Current URL pattern is not optimal for extraction - job details may be in a dynamic panel');
+
+      // For search view, we need to target the job details panel/modal on the right side
+      // The selectors are different here - they target the active job card in the results
+      // Wait a bit for the panel to load
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
     // IMPORTANT: Click "Show more" button to expand full description before extraction
     try {
       const showMoreButton = document.querySelector('.jobs-description__footer-button, .show-more-less-html__button, [aria-label*="more description"]');
