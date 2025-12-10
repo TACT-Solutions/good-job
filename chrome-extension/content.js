@@ -705,12 +705,18 @@ function parseRelativeDate(text) {
   return null;
 }
 
-// Clean text by removing extra whitespace and unwanted characters
+// Clean text by normalizing whitespace while preserving structure
 function cleanText(text) {
   if (!text) return '';
   return text
-    .replace(/\s+/g, ' ')
-    .replace(/[\n\r\t]+/g, ' ')
+    // Normalize multiple spaces/tabs to single space
+    .replace(/[ \t]+/g, ' ')
+    // Normalize multiple line breaks to maximum 2 (preserve paragraph breaks)
+    .replace(/\n{3,}/g, '\n\n')
+    // Remove trailing spaces from each line
+    .replace(/ +$/gm, '')
+    // Remove leading spaces from each line
+    .replace(/^ +/gm, '')
     .trim();
 }
 
