@@ -1,12 +1,14 @@
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'extractJobData') {
-    const jobData = extractJobInfo();
-    sendResponse(jobData);
+    extractJobInfo().then(jobData => {
+      sendResponse(jobData);
+    });
+    return true; // Keep channel open for async response
   }
   return true;
 });
 
-function extractJobInfo() {
+async function extractJobInfo() {
   const url = window.location.href;
   let title = '';
   let company = '';
@@ -21,6 +23,20 @@ function extractJobInfo() {
   if (url.includes('linkedin.com/jobs')) {
     source = 'LinkedIn';
     console.log('[GoodJob] Extracting LinkedIn job data from:', url);
+
+    // IMPORTANT: Click "Show more" button to expand full description before extraction
+    try {
+      const showMoreButton = document.querySelector('.jobs-description__footer-button, .show-more-less-html__button, [aria-label*="more description"]');
+      if (showMoreButton && showMoreButton.textContent.toLowerCase().includes('more')) {
+        console.log('[GoodJob] Found "Show more" button, clicking to expand description...');
+        showMoreButton.click();
+        // Wait for content to expand
+        await new Promise(resolve => setTimeout(resolve, 500));
+        console.log('[GoodJob] Description expanded');
+      }
+    } catch (error) {
+      console.log('[GoodJob] No "Show more" button found or already expanded');
+    }
 
     // Title - multiple selectors
     title = trySelectors([
