@@ -72,21 +72,33 @@ async function extractJobInfo() {
       }
     }
 
-    // Location - multiple selectors
+    // Location - multiple selectors (LinkedIn changed structure)
     location = trySelectors([
       '.job-details-jobs-unified-top-card__bullet',
       '.jobs-unified-top-card__bullet',
-      '.jobs-unified-top-card__workplace-type'
+      '.jobs-unified-top-card__workplace-type',
+      '.job-details-jobs-unified-top-card__tertiary-description-container .tvm__text--low-emphasis'
     ]);
 
-    // Description - multiple selectors (now should get full expanded content)
-    // Also try to capture hidden content (not just visible)
-    const descriptionContainer = document.querySelector('.jobs-description__content, .jobs-box__html-content, .jobs-description');
+    // If we got multiple values (location + other metadata), extract just the location
+    if (location && location.includes('·')) {
+      // Split by · and take first part (usually the location)
+      location = location.split('·')[0].trim();
+    }
+
+    // Description - use ID selector (more stable than dynamic classes)
+    let descriptionContainer = document.getElementById('job-details');
+    if (!descriptionContainer) {
+      // Fallback to class selectors
+      descriptionContainer = document.querySelector('.jobs-description__content, .jobs-box__html-content, .jobs-description');
+    }
+
     if (descriptionContainer) {
       // Get all text, including hidden elements
       description = descriptionContainer.textContent?.trim() || '';
+      console.log('[GoodJob] LinkedIn description extracted, length:', description.length);
     } else {
-      // Fallback to trySelectors
+      // Last resort trySelectors
       description = trySelectors([
         '.jobs-description__content',
         '.jobs-box__html-content',
@@ -96,6 +108,7 @@ async function extractJobInfo() {
         '#job-details',
         '[data-job-details]'
       ]);
+      console.log('[GoodJob] LinkedIn description via trySelectors, length:', description.length);
     }
 
     // Salary - multiple approaches
