@@ -314,6 +314,8 @@ export async function getContactIntelligence(
 
   // If we found a matching contact, use them instead of the generic hiring manager
   let finalHiringManager = hiringManager;
+  let confidence: 'high' | 'medium' | 'low' = 'low';
+
   if (matchingContact) {
     console.log('[ContactDiscovery] Found matching team contact for hiring manager:', matchingContact.name);
     finalHiringManager = {
@@ -327,6 +329,11 @@ export async function getContactIntelligence(
       linkedin: matchingContact.linkedin || null,
       reasoning: `${matchingContact.name} is the ${matchingContact.title} at ${companyName}, making them the most likely hiring manager for this ${department} role.`
     };
+    confidence = 'high'; // High confidence - actual team member found
+  } else if (hiringManager.name) {
+    confidence = 'medium'; // Medium confidence - AI found a specific name
+  } else {
+    confidence = 'low'; // Low confidence - generic title only
   }
 
   // If hiring manager has a name but no emails, generate them
@@ -346,6 +353,7 @@ export async function getContactIntelligence(
 
   return {
     hiringManager: finalHiringManager,
+    hiringManagerConfidence: confidence,
     teamContacts: companyContacts.contacts,
     emailPatterns: companyContacts.emailPatterns,
     totalContactsFound: companyContacts.contacts.length,

@@ -529,6 +529,17 @@ export default function JobDetailView({
             <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200 p-6">
               <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
                 👤 Hiring Manager
+                {enrichedData.hiringManagerConfidence && (
+                  <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
+                    enrichedData.hiringManagerConfidence === 'high' ? 'bg-green-100 text-green-700' :
+                    enrichedData.hiringManagerConfidence === 'medium' ? 'bg-amber-100 text-amber-700' :
+                    'bg-slate-100 text-slate-600'
+                  }`}>
+                    {enrichedData.hiringManagerConfidence === 'high' ? '✓ Verified' :
+                     enrichedData.hiringManagerConfidence === 'medium' ? '~ Likely' :
+                     '* Best Guess'}
+                  </span>
+                )}
               </h3>
 
               {enrichedData.hiringManagerName ? (

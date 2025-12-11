@@ -228,6 +228,7 @@ export async function POST(request: NextRequest) {
       hiringManagerEmails: contactIntelligence.hiringManager.emails,
       hiringManagerLinkedIn: contactIntelligence.hiringManager.linkedin,
       hiringManagerReasoning: contactIntelligence.hiringManager.reasoning,
+      hiringManagerConfidence: contactIntelligence.hiringManagerConfidence,
       teamContacts: contactIntelligence.teamContacts,
       emailPatterns: contactIntelligence.emailPatterns,
       totalContactsFound: contactIntelligence.totalContactsFound,
