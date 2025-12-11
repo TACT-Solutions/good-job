@@ -192,38 +192,50 @@ export async function enrichCompanyIntelligenceWithClaude(
     const message = await anthropic.messages.create({
       model: 'claude-3-5-haiku-20241022',
       max_tokens: 1500,
-      temperature: 0.2,
+      temperature: 0.1, // Lower temperature for more factual responses
       messages: [
         {
           role: 'user',
-          content: `Research this company and provide detailed intelligence: ${companyName}
+          content: `You are a company intelligence analyst with access to comprehensive company data.
 
-Job Title: ${jobTitle}
-Job Description: ${jobDescription.substring(0, 1000)}...
+COMPANY TO RESEARCH: ${companyName}
 
-You are a company intelligence analyst. Use your full training data knowledge to identify:
+JOB CONTEXT:
+Title: ${jobTitle}
+Description (excerpt): ${jobDescription.substring(0, 1500)}
 
-1. INDUSTRY: What industry/sector does this company operate in? Be specific (e.g., "Legal Technology", "Enterprise Software", "Financial Services", "Healthcare IT"). If it's a well-known company, use your knowledge. If not, infer from the job description.
+TASK: Provide detailed, accurate company intelligence using your knowledge base.
 
-2. SIZE: What is the company size? Choose the most accurate option based on your knowledge:
-   - "startup" (1-50 employees)
-   - "small" (51-200 employees)
-   - "medium" (201-1000 employees)
-   - "large" (1001-10000 employees)
-   - "enterprise" (10000+ employees)
+CRITICAL INSTRUCTIONS:
+1. INDUSTRY - Be HIGHLY SPECIFIC about what vertical/sector this company operates in:
+   * For known companies, use your training data (e.g., "SkimTurf" → "Sports Technology & Social Networking")
+   * Look for domain-specific keywords: "legal research" → Legal Tech, "patient data" → HealthTech, "turf management" → Sports Tech
+   * NEVER return generic answers like "Technology" or "Software"
+   * Examples of good answers: "Sports Technology & Social Networking", "Legal Technology SaaS", "Healthcare Analytics", "Fintech Payment Processing", "EdTech Learning Platforms"
 
-3. DEPARTMENT: What department is hiring for this role? Be specific (e.g., "Engineering", "Legal Technology", "Product", "Customer Success", "Data Science", "Marketing").
+2. SIZE - Use ALL available information to determine actual company size:
+   * If you recognize the company, use your knowledge of their actual employee count
+   * Job description clues: mentions of "global", "offices worldwide", "publicly traded" = larger company
+   * Startup indicators: "seed funded", "early stage", "small team", "founding team" = startup/small
+   * Scale indicators: "serving millions", "Fortune 500", "industry leader" = enterprise/large
+   * Be accurate - don't default to "medium" without evidence
+   * Options: "startup" (1-50), "small" (51-200), "medium" (201-1000), "large" (1001-10000), "enterprise" (10000+)
 
-CRITICAL: DO NOT return "Unknown" for any field. Use your training data knowledge of companies, and if you don't know the company, make educated inferences from:
-- The job title and description
-- Common industry patterns
-- Technology stack mentioned
-- Team structure hints
-- Role responsibilities
+3. DEPARTMENT - Identify the SPECIFIC department/team hiring (NOT generic "General"):
+   * Engineering specifics: "Frontend Engineering", "Backend Engineering", "Mobile Development", "DevOps", "Data Engineering", "ML/AI Engineering"
+   * Product specifics: "Product Management", "Product Design", "UX Research", "Product Strategy"
+   * Other departments: "Growth Marketing", "Customer Success", "Sales Operations", "Business Intelligence"
+   * Infer from job title and responsibilities - be precise
 
-Return ONLY valid JSON with these exact fields:
+QUALITY REQUIREMENTS:
+- Do NOT return generic placeholders like "Technology", "General", or "medium" without strong evidence
+- Use your knowledge of real companies whenever possible
+- Make educated inferences from job description details (tech stack, responsibilities, scale mentions)
+- If truly unable to determine something, make the best possible inference from available context
+
+Return ONLY valid JSON:
 {
-  "industry": "specific industry name",
+  "industry": "specific industry/vertical",
   "size": "startup|small|medium|large|enterprise",
   "department": "specific department name"
 }`,
@@ -238,6 +250,7 @@ Return ONLY valid JSON with these exact fields:
     const data = JSON.parse(cleanedResult);
 
     console.log('[Scraper] Claude enhanced intelligence:', {
+      company: companyName,
       industry: data.industry,
       size: data.size,
       department: data.department,
@@ -250,16 +263,39 @@ Return ONLY valid JSON with these exact fields:
     };
   } catch (error) {
     console.error('[Scraper] Claude intelligence enhancement error:', error);
-    // Last resort fallback - infer from job title
-    const department = jobTitle.toLowerCase().includes('engineer') ? 'Engineering' :
-                      jobTitle.toLowerCase().includes('product') ? 'Product' :
-                      jobTitle.toLowerCase().includes('market') ? 'Marketing' :
-                      jobTitle.toLowerCase().includes('sales') ? 'Sales' :
-                      jobTitle.toLowerCase().includes('data') ? 'Data & Analytics' :
-                      'General';
+    // Last resort fallback - make smart inferences from job title
+    let department = 'General';
+    let industry = 'Technology';
+
+    const titleLower = jobTitle.toLowerCase();
+    const descLower = jobDescription.toLowerCase();
+
+    // Infer department from title
+    if (titleLower.includes('engineer') || titleLower.includes('developer')) {
+      if (titleLower.includes('frontend') || titleLower.includes('front-end')) department = 'Frontend Engineering';
+      else if (titleLower.includes('backend') || titleLower.includes('back-end')) department = 'Backend Engineering';
+      else if (titleLower.includes('mobile') || titleLower.includes('ios') || titleLower.includes('android')) department = 'Mobile Engineering';
+      else if (titleLower.includes('devops') || titleLower.includes('infrastructure')) department = 'DevOps';
+      else if (titleLower.includes('data')) department = 'Data Engineering';
+      else if (titleLower.includes('ml') || titleLower.includes('ai') || titleLower.includes('machine learning')) department = 'ML/AI Engineering';
+      else department = 'Engineering';
+    } else if (titleLower.includes('product')) {
+      if (titleLower.includes('design')) department = 'Product Design';
+      else department = 'Product Management';
+    } else if (titleLower.includes('market')) department = 'Marketing';
+    else if (titleLower.includes('sales')) department = 'Sales';
+    else if (titleLower.includes('customer success') || titleLower.includes('support')) department = 'Customer Success';
+
+    // Infer industry from company name or description
+    const companyLower = companyName.toLowerCase();
+    if (companyLower.includes('health') || descLower.includes('patient') || descLower.includes('medical')) industry = 'Healthcare Technology';
+    else if (companyLower.includes('finance') || companyLower.includes('fintech') || descLower.includes('payment')) industry = 'Financial Technology';
+    else if (companyLower.includes('edu') || descLower.includes('learning') || descLower.includes('student')) industry = 'Education Technology';
+    else if (companyLower.includes('legal') || descLower.includes('law') || descLower.includes('attorney')) industry = 'Legal Technology';
+    else if (companyLower.includes('sport') || descLower.includes('athlete') || descLower.includes('turf') || descLower.includes('game')) industry = 'Sports Technology';
 
     return {
-      industry: 'Technology',
+      industry,
       size: 'medium',
       department,
     };

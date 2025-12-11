@@ -99,21 +99,42 @@ export async function extractCompanyInfo(companyName: string, jobDescription: st
       messages: [
         {
           role: 'system',
-          content: `You are a job description analyzer. Your task is to EXTRACT company information DIRECTLY from the job description text provided.
+          content: `You are a job description analyzer with deep knowledge of companies and industries.
 
-CRITICAL: You must infer information FROM THE JOB DESCRIPTION TEXT, not from your general knowledge.
+CRITICAL: Extract company-specific information from the job description AND use your knowledge of the company.
 
 Extract and return JSON with:
-- industry: What industry does this company operate in? Look for clues like product descriptions, tech stack, domain mentions (e.g., "legal technology", "healthcare software", "fintech")
-- size: Estimate company size based on team structure, scale of operations, funding mentions, office locations. Options: "startup" (1-50), "small" (51-200), "medium" (201-1000), "large" (1001-10000), "enterprise" (10000+)
-- hiringManager: Who would likely hire for this role? Infer from the department and seniority (e.g., "Engineering Manager", "VP of Product", "Director of Marketing")
-- department: Which department is hiring? Look at the role responsibilities, reporting structure, team mentions (e.g., "Engineering", "Product", "Marketing", "Sales")
+- industry: What SPECIFIC industry/vertical does this company operate in? BE PRECISE:
+  * If it's a known company (e.g., "Thomson Reuters" → "Legal Technology & Enterprise Information")
+  * Look for product names, services, domain mentions in the description
+  * Tech stack hints (e.g., "legal research tools" = Legal Tech, "patient care" = Healthcare)
+  * NEVER use generic "Technology" - be specific (e.g., "SaaS", "Fintech", "EdTech", "HealthTech", "AI/ML", "Sports Technology")
+
+- size: Estimate company size using ALL available context:
+  * If you recognize the company name, use your knowledge of their actual size
+  * Job description clues: "global team", "multiple offices", "Fortune 500" = enterprise
+  * Funding mentions: "Series A" = startup, "publicly traded" = enterprise/large
+  * Scale indicators: "serving millions of users", "international expansion" = large/enterprise
+  * Options: "startup" (1-50), "small" (51-200), "medium" (201-1000), "large" (1001-10000), "enterprise" (10000+)
+
+- hiringManager: Who would likely hire for this role? Be SPECIFIC:
+  * Senior roles → "VP of Engineering", "Director of Product", "Head of Marketing"
+  * Mid-level → "Engineering Manager", "Product Manager", "Marketing Manager"
+  * Entry/junior → "Team Lead", "Senior Engineer", "Department Manager"
+  * Match to the department and seniority level
+
+- department: Which SPECIFIC department/team is hiring? Examples:
+  * Engineering types: "Frontend Engineering", "Backend Engineering", "Mobile Engineering", "DevOps", "Data Engineering", "ML/AI"
+  * Product types: "Product Management", "Product Design", "UX Research"
+  * Other: "Growth Marketing", "Sales Operations", "Customer Success", "Legal Technology"
+  * NEVER use generic "General" - infer from job title and responsibilities
 
 IMPORTANT:
-- If the description mentions company details (size, industry, team), USE THEM
-- Make educated inferences from job responsibilities, tech stack, and role context
-- NEVER return "Unknown" - always make your best inference from the description
-- If truly no clues exist, use generic but logical defaults based on the job title
+- Use your knowledge of well-known companies (e.g., if company is "SkimTurf", research what they do)
+- Extract company details from product descriptions, mission statements, tech stack
+- Be SPECIFIC - avoid generic answers like "Technology", "medium", "General"
+- If the company name is recognizable, use your training data knowledge
+- Make intelligent inferences from context clues in the job description
 
 Return ONLY valid JSON.`,
         },
@@ -163,14 +184,22 @@ export function validateCompanyIntelligence(companyInfo: {
 }): { isValid: boolean; missingFields: string[] } {
   const missingFields: string[] = [];
 
-  // Check for "Unknown" or empty values in critical fields
-  if (!companyInfo.industry || companyInfo.industry.toLowerCase() === 'unknown' || companyInfo.industry.trim() === '') {
+  // Generic/placeholder values that should trigger fallback
+  const genericIndustries = ['unknown', 'technology', 'tech', 'general', 'other', 'n/a', 'not specified'];
+  const genericDepartments = ['unknown', 'general', 'other', 'n/a', 'not specified'];
+
+  // Check for "Unknown", empty values, OR generic placeholders
+  const industryLower = companyInfo.industry?.toLowerCase().trim() || '';
+  if (!industryLower || genericIndustries.includes(industryLower)) {
     missingFields.push('industry');
   }
+
   if (!companyInfo.size || companyInfo.size.toLowerCase() === 'unknown' || companyInfo.size.trim() === '') {
     missingFields.push('size');
   }
-  if (!companyInfo.department || companyInfo.department.toLowerCase() === 'unknown' || companyInfo.department.trim() === '') {
+
+  const departmentLower = companyInfo.department?.toLowerCase().trim() || '';
+  if (!departmentLower || genericDepartments.includes(departmentLower)) {
     missingFields.push('department');
   }
 
