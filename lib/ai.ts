@@ -156,7 +156,14 @@ Return ONLY valid JSON.`,
     if (!result) throw new Error('No response');
 
     // Strip markdown code blocks if present (```json ... ```)
-    const cleanedResult = result.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    let cleanedResult = result.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+    // Extract only the JSON object - find first { and last }
+    const firstBrace = cleanedResult.indexOf('{');
+    const lastBrace = cleanedResult.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace !== -1) {
+      cleanedResult = cleanedResult.substring(firstBrace, lastBrace + 1);
+    }
 
     const parsed = JSON.parse(cleanedResult);
     console.log('[AI] Successfully parsed company info JSON');

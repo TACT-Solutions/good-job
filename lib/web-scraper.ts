@@ -248,7 +248,15 @@ Return ONLY valid JSON:
     const result = message.content[0].type === 'text' ? message.content[0].text : '';
     if (!result) throw new Error('No response from Claude');
 
-    const cleanedResult = result.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    let cleanedResult = result.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+    // Extract only the JSON object - find first { and last }
+    const firstBrace = cleanedResult.indexOf('{');
+    const lastBrace = cleanedResult.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace !== -1) {
+      cleanedResult = cleanedResult.substring(firstBrace, lastBrace + 1);
+    }
+
     const data = JSON.parse(cleanedResult);
 
     console.log('[Scraper] Claude enhanced intelligence:', {

@@ -77,7 +77,15 @@ Find publicly known contacts and detect email patterns.`,
     const result = completion.choices[0]?.message?.content;
     if (!result) throw new Error('No response from AI');
 
-    const cleanedResult = result.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    let cleanedResult = result.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+    // Extract only the JSON object - find first { and last }
+    const firstBrace = cleanedResult.indexOf('{');
+    const lastBrace = cleanedResult.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace !== -1) {
+      cleanedResult = cleanedResult.substring(firstBrace, lastBrace + 1);
+    }
+
     const data = JSON.parse(cleanedResult);
 
     console.log('[ContactDiscovery] Found', data.contacts?.length || 0, 'contacts');
