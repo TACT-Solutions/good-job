@@ -287,23 +287,57 @@ export async function getContactIntelligence(
     findHiringManager(companyName, jobTitle, department),
   ]);
 
+  // SMART MATCHING: If we found team contacts that match the department, use them as hiring manager
+  const departmentLower = department.toLowerCase();
+  const matchingContact = companyContacts.contacts.find(contact => {
+    const titleLower = contact.title.toLowerCase();
+    // Check if contact's title matches the department
+    return (
+      titleLower.includes(departmentLower) ||
+      // Special cases
+      (departmentLower.includes('engineer') && titleLower.includes('engineer')) ||
+      (departmentLower.includes('product') && titleLower.includes('product')) ||
+      (departmentLower.includes('marketing') && titleLower.includes('marketing')) ||
+      (departmentLower.includes('sales') && titleLower.includes('sales')) ||
+      (departmentLower.includes('customer success') && titleLower.includes('customer')) ||
+      (departmentLower.includes('data') && titleLower.includes('data'))
+    );
+  });
+
+  // If we found a matching contact, use them instead of the generic hiring manager
+  let finalHiringManager = hiringManager;
+  if (matchingContact) {
+    console.log('[ContactDiscovery] Found matching team contact for hiring manager:', matchingContact.name);
+    finalHiringManager = {
+      name: matchingContact.name,
+      title: matchingContact.title,
+      emails: matchingContact.email ? [{
+        email: matchingContact.email,
+        confidence: matchingContact.confidence,
+        pattern: 'from team contacts'
+      }] : [],
+      linkedin: matchingContact.linkedin || null,
+      reasoning: `${matchingContact.name} is the ${matchingContact.title} at ${companyName}, making them the most likely hiring manager for this ${department} role.`
+    };
+  }
+
   // If hiring manager has a name but no emails, generate them
-  if (hiringManager.name && hiringManager.emails.length === 0) {
+  if (finalHiringManager.name && finalHiringManager.emails.length === 0) {
     const emailGuesses = await generateEmailGuess(
-      hiringManager.name,
-      hiringManager.title,
+      finalHiringManager.name,
+      finalHiringManager.title,
       companyName,
       companyDomain,
       companyContacts.emailPatterns
     );
 
-    hiringManager.emails = emailGuesses.suggestedEmails;
+    finalHiringManager.emails = emailGuesses.suggestedEmails;
   }
 
   console.log('[ContactDiscovery] Contact intelligence complete');
 
   return {
-    hiringManager,
+    hiringManager: finalHiringManager,
     teamContacts: companyContacts.contacts,
     emailPatterns: companyContacts.emailPatterns,
     totalContactsFound: companyContacts.contacts.length,
