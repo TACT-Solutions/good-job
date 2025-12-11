@@ -110,12 +110,14 @@ Extract and return JSON with:
   * Tech stack hints (e.g., "legal research tools" = Legal Tech, "patient care" = Healthcare)
   * NEVER use generic "Technology" - be specific (e.g., "SaaS", "Fintech", "EdTech", "HealthTech", "AI/ML", "Sports Technology")
 
-- size: Estimate company size using ALL available context:
+- size: Estimate company size using ALL available context - BE ACCURATE, not just "medium":
+  * STARTUP indicators (1-50): "launched X years ago", "fast-growing", "early stage", "seed funded", "Series A/B", "small team", "wearing multiple hats", "recent award/recognition", "founded in 20XX"
+  * SMALL indicators (51-200): "growing team", "Series C", "expanding operations", "regional presence"
+  * MEDIUM indicators (201-1000): "established company", "multiple offices", "national presence", "mature product"
+  * LARGE indicators (1001-10000): "global team", "international offices", "publicly traded", "industry leader"
+  * ENTERPRISE indicators (10000+): "Fortune 500", "tens of thousands", "worldwide operations", "multiple divisions"
   * If you recognize the company name, use your knowledge of their actual size
-  * Job description clues: "global team", "multiple offices", "Fortune 500" = enterprise
-  * Funding mentions: "Series A" = startup, "publicly traded" = enterprise/large
-  * Scale indicators: "serving millions of users", "international expansion" = large/enterprise
-  * Options: "startup" (1-50), "small" (51-200), "medium" (201-1000), "large" (1001-10000), "enterprise" (10000+)
+  * DEFAULT: If truly unclear, prefer "startup" or "small" over "medium" for companies with recent founding dates or "fast-growing" mentions
 
 - hiringManager: Who would likely hire for this role? Be SPECIFIC:
   * Senior roles → "VP of Engineering", "Director of Product", "Head of Marketing"

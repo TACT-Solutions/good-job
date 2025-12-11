@@ -213,12 +213,14 @@ CRITICAL INSTRUCTIONS:
    * NEVER return generic answers like "Technology" or "Software"
    * Examples of good answers: "Sports Technology & Social Networking", "Legal Technology SaaS", "Healthcare Analytics", "Fintech Payment Processing", "EdTech Learning Platforms"
 
-2. SIZE - Use ALL available information to determine actual company size:
-   * If you recognize the company, use your knowledge of their actual employee count
-   * Job description clues: mentions of "global", "offices worldwide", "publicly traded" = larger company
-   * Startup indicators: "seed funded", "early stage", "small team", "founding team" = startup/small
-   * Scale indicators: "serving millions", "Fortune 500", "industry leader" = enterprise/large
-   * Be accurate - don't default to "medium" without evidence
+2. SIZE - Use ALL available information to determine actual company size (DO NOT default to "medium"):
+   * STARTUP (1-50): "launched X years ago", "fast-growing", "early stage", "seed/Series A/B", "small team", "wearing multiple hats", "recent award", "founded 20XX"
+   * SMALL (51-200): "growing team", "Series C", "expanding", "regional presence"
+   * MEDIUM (201-1000): "established", "multiple offices", "national presence"
+   * LARGE (1001-10000): "global team", "international", "publicly traded", "industry leader"
+   * ENTERPRISE (10000+): "Fortune 500", "tens of thousands", "worldwide", "multiple divisions"
+   * If you recognize the company, use your knowledge of actual size
+   * CRITICAL: "fast-growing" + "launched X years ago" + "recent award" = STARTUP, not medium
    * Options: "startup" (1-50), "small" (51-200), "medium" (201-1000), "large" (1001-10000), "enterprise" (10000+)
 
 3. DEPARTMENT - Identify the SPECIFIC department/team hiring (NOT generic "General"):
